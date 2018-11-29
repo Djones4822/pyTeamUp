@@ -4,16 +4,10 @@ import datetime
 import pandas as pd
 
 from pyteamup.utils.utilities import check_status_code
-
+from pyteamup.utils.constants import *
+from pyteamup.event import Event
 
 class Calendar:
-    BASE_URL = f'https://api.teamup.com'
-    CHECK_ACCESS_BASE = '/check-access'
-    EVENTS_BASE = '/events'
-    SUBCALENDARS_BASE = '/subcalendars'
-    CONFIGURATION_BASE = '/configuration'
-    POST_HEADERS = {'Content-type':'application/json'}
-
     def __init__(self, cal_id, api_key):
         self.__calendar_id = cal_id
         self.__api_key = api_key
@@ -23,16 +17,19 @@ class Calendar:
         self.__valid_api = None
         self.__configuration = None
 
-        self._base_url = Calendar.BASE_URL + self.__cal_base
-        self._events_url = self._base_url + Calendar.EVENTS_BASE + self.__token_str
-        self._subcalendars_url = self._base_url + Calendar.SUBCALENDARS_BASE + self.__token_str
-        self._check_access_url = Calendar.BASE_URL + Calendar.CHECK_ACCESS_BASE + self.__token_str
+        self._base_url = BASE_URL + self.__cal_base
+        self._event_collection_url = self._base_url + EVENTS_BASE + self.__token_str
+        self._subcalendars_url = self._base_url + SUBCALENDARS_BASE + self.__token_str
+        self._check_access_url = BASE_URL + CHECK_ACCESS_BASE + self.__token_str
         self._session_request_counter = 0
 
         self.events_json = None
 
         if not self.valid_api:
             raise Exception(f'Invalid Api Key: {self.api_key}')
+
+    def __str__(self):
+        return self.calendar_id
 
     @property
     def api_key(self):
@@ -62,7 +59,7 @@ class Calendar:
     def configuration(self):
         if self.__configuration is None:
             print('Fetching configuration')
-            req = requests.get(self._base_url + Calendar.CONFIGURATION_BASE + self.__token_str)
+            req = requests.get(self._base_url + CONFIGURATION_BASE + self.__token_str)
             check_status_code(req.status_code)
             self._session_request_counter += 1
             self.__configuration = json.loads(req.text)['configuration']
@@ -106,7 +103,7 @@ class Calendar:
                 subcal_par = f'&subcalendarId[]={subcal_id}'
 
         parameters = f'&startDate={start_date.strftime("%Y-%m-%d")}&endDate={end_date.strftime("%Y-%m-%d")}' + subcal_par
-        req = requests.get(self._events_url + parameters)
+        req = requests.get(self._event_collection_url + parameters)
         check_status_code(req.status_code)
         self._session_request_counter += 1
         self.events_json = json.loads(req.text)
@@ -115,15 +112,9 @@ class Calendar:
             return  pd.DataFrame.from_records(self.events_json['events'])
         return self.events_json
 
-    def get_event(self, event_id):
-        raise NotImplementedError
-
-    def get_subcalendar(self, subcalendar_id):
-        raise NotImplementedError
-
     def create_event_from_json(self, payload):
         """ Lazy Creation of Event by passing a formatted payload"""
-        resp = requests.post(self._events_url, data=payload, headers=Calendar.POST_HEADERS)
+        resp = requests.post(self._event_collection_url, data=payload, headers=POST_HEADERS)
         try:
             check_status_code(resp.status_code)
             self._session_request_counter += 1
@@ -133,14 +124,29 @@ class Calendar:
 
     def update_event_from_json(self, event_id, payload):
         """ Lazy Update of Event by passing an event ID and a formatted payload"""
-        event_update_url = self._events_url + f'/{event_id}'
-        resp = requests.post(event_update_url, data=payload, headers=Calendar.POST_HEADERS)
+        event_update_url = self._event_collection_url + f'/{event_id}'
+        resp = requests.post(event_update_url, data=payload, headers=POST_HEADERS)
         try:
             check_status_code(resp.status_code)
             self._session_request_counter += 1
         except:
             print(resp.text)
             raise
+
+    def get_event(self, event_id):
+        url = self._base_url + EVENTS_BASE + f'/{event_id}' + self.__token_str
+        resp = requests.get(url)
+        check_status_code(resp.status_code)
+        event_dict = json.loads(resp.text)['event']
+        try:
+            return Event(self, **event_dict)
+        except Exception as e:
+            print(e)
+            raise e
+            return resp.text
+
+    def get_subcalendar(self, subcalendar_id):
+        raise NotImplementedError
 
 
 if __name__ == '__main__':
