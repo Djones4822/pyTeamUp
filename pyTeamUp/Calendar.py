@@ -1,9 +1,10 @@
 import requests
 import json
 import datetime
-from warnings import warn
+import pandas as pd
 
-from pyteamup.utils import *
+from pyteamup.utils.utilities import check_status_code
+
 
 class Calendar:
     BASE_URL = f'https://api.teamup.com'
@@ -16,16 +17,19 @@ class Calendar:
     def __init__(self, cal_id, api_key):
         self.__calendar_id = cal_id
         self.__api_key = api_key
-        self.__valid_api = None
         self.__cal_base = f'/{cal_id}'
-        self.__configuration = None
         self.__token_str = f'?_teamup_token={self.api_key}'
+        self.__subcalendars = None
+        self.__valid_api = None
+        self.__configuration = None
 
         self._base_url = Calendar.BASE_URL + self.__cal_base
         self._events_url = self._base_url + Calendar.EVENTS_BASE + self.__token_str
         self._subcalendars_url = self._base_url + Calendar.SUBCALENDARS_BASE + self.__token_str
         self._check_access_url = Calendar.BASE_URL + Calendar.CHECK_ACCESS_BASE + self.__token_str
         self._session_request_counter = 0
+
+        self.events_json = None
 
         if not self.valid_api:
             raise Exception(f'Invalid Api Key: {self.api_key}')
@@ -52,18 +56,33 @@ class Calendar:
             return self.__valid_api
 
         else:
-            return
+            return None
 
     @property
     def configuration(self):
-        """"""
         if self.__configuration is None:
+            print('Fetching configuration')
             req = requests.get(self._base_url + Calendar.CONFIGURATION_BASE + self.__token_str)
             check_status_code(req.status_code)
+            self._session_request_counter += 1
             self.__configuration = json.loads(req.text)['configuration']
         return self.__configuration
 
-    def get_events(self, start_date=None, end_date=None, subcal_id=None):
+    @property
+    def subcalendars(self):
+        if not self.__subcalendars:
+            print('Fetching Subcalendars')
+            req = requests.get(self._subcalendars_url)
+            check_status_code(req.status_code)
+            self._session_request_counter += 1
+            self.__subcalendars = json.loads(req.text)['subcalendars']
+        return self.__subcalendars
+
+    def clear_calendar_cache(self):
+        self.__subcalendars = None
+        self.__configuration = None
+
+    def get_event_collection(self, start_date=None, end_date=None, subcal_id=None, return_df=True):
         """
         Method allows bulk fetching of events that fall between the provided time frame. If None is provided then
         the current date -30 and +180 days is used.
@@ -89,20 +108,35 @@ class Calendar:
         parameters = f'&startDate={start_date.strftime("%Y-%m-%d")}&endDate={end_date.strftime("%Y-%m-%d")}' + subcal_par
         req = requests.get(self._events_url + parameters)
         check_status_code(req.status_code)
+        self._session_request_counter += 1
         self.events_json = json.loads(req.text)
+
+        if return_df:
+            return  pd.DataFrame.from_records(self.events_json['events'])
         return self.events_json
 
-    def create_event(self, payload):
+    def get_event(self, event_id):
+        raise NotImplementedError
+
+    def get_subcalendar(self, subcalendar_id):
+        raise NotImplementedError
+
+    def create_event_from_json(self, payload):
         """ Lazy Creation of Event by passing a formatted payload"""
         resp = requests.post(self._events_url, data=payload, headers=Calendar.POST_HEADERS)
-        check_status_code(resp.status_code)
+        try:
+            check_status_code(resp.status_code)
+            self._session_request_counter += 1
+        except:
+            print(resp.text)
+            raise
         #raise NotImplementedError
 
-    def update_event(self, event_id, payload):
+    def update_event_from_json(self, event_id, payload):
         """ Lazy Update of Event by passing an event ID and a formatted payload"""
         raise NotImplementedError
 
-    def delete_event(self, event_id):
+    def delete_event_from_json(self, event_id):
         """ Lazy Delete of an event by passing the event id"""
         raise NotImplementedError
 
