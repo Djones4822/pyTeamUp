@@ -130,15 +130,17 @@ class Calendar:
         except:
             print(resp.text)
             raise
-        #raise NotImplementedError
 
     def update_event_from_json(self, event_id, payload):
         """ Lazy Update of Event by passing an event ID and a formatted payload"""
-        raise NotImplementedError
-
-    def delete_event_from_json(self, event_id):
-        """ Lazy Delete of an event by passing the event id"""
-        raise NotImplementedError
+        event_update_url = self._events_url + f'/{event_id}'
+        resp = requests.post(event_update_url, data=payload, headers=Calendar.POST_HEADERS)
+        try:
+            check_status_code(resp.status_code)
+            self._session_request_counter += 1
+        except:
+            print(resp.text)
+            raise
 
 
 if __name__ == '__main__':
