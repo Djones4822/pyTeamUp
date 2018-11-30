@@ -132,17 +132,6 @@ class Calendar:
             print(resp.text)
             raise
 
-    def update_event_from_json(self, event_id, payload):
-        """ Lazy Update of Event by passing an event ID and a formatted payload"""
-        event_update_url = self._event_collection_url + f'/{event_id}'
-        resp = requests.post(event_update_url, data=payload, headers=POST_HEADERS)
-        try:
-            check_status_code(resp.status_code)
-            self._session_request_counter += 1
-        except:
-            print(resp.text)
-            raise
-
     def get_event(self, event_id, returnas='event'):
         if returnas not in ('event', 'series', 'dict'):
             raise TypeError('Returnas not recognized. Recognized values: event, series, dict')
