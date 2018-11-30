@@ -3,6 +3,7 @@ from warnings import warn
 import requests
 import json
 from datetime import datetime
+from collections import OrderedDict
 try:
     from pandas import to_datetime
 except:
@@ -57,7 +58,7 @@ class Event:
         self.__history = None
 
         self.__batch = False
-        self.__batch_update_records = {}
+        self.__batch_update_records = OrderedDict()
 
 
         self.__api_key = self.parent_calendar.api_key
@@ -79,7 +80,8 @@ class Event:
     @remote_id.setter
     def remote_id(self, new_id):
         if new_id != self.remote_id:
-            raise NotImplementedError('pyTeamUp Not configured to Update')
+            update_dict = {'remote_id': new_id}
+            self.execute_update(update_dict)
         else:
             if not self.surpress_warning:
                 warn('New Remote Id is identical to current ID. No changes made')
@@ -94,7 +96,8 @@ class Event:
             new_date = to_datetime(new_date)
 
         if new_date != self.start_dt:
-            raise NotImplementedError('pyTeamUp Not configured to Update')
+            update_dict = {'start_dt': new_date}
+            self.execute_update(update_dict)
         else:
             if not self.surpress_warning:
                 warn('New Start Date is identical to current. No changes made')
@@ -107,9 +110,9 @@ class Event:
     def end_dt(self, new_date):
         if not isinstance(new_date, datetime):
             new_date = to_datetime(new_date)
-
         if new_date != self.end_dt:
-            raise NotImplementedError('pyTeamUp Not configured to Update')
+            update_dict = {'end_dt': new_date}
+            self.execute_update(update_dict)
         else:
             if not self.surpress_warning:
                 warn('New End Date is identical to current. No changes made')
@@ -128,7 +131,8 @@ class Event:
             raise TypeError('Must pass a boolean argument as new value')
 
         if value != self.all_day:
-            raise NotImplementedError('pyTeamUp Not configured to Update')
+            update_dict = {'all_day': value}
+            self.execute_update(update_dict)
         else:
             if not self.surpress_warning:
                 warn('New all_day value is identical to current. No changes made')
@@ -141,8 +145,7 @@ class Event:
     def title(self, new_title):
         if new_title != self.title:
             update_dict = {'title': new_title}
-            resp = self.execute_update(update_dict)
-
+            self.execute_update(update_dict)
         else:
             if not self.surpress_warning:
                 warn('New title is identical to current. No changes made')
@@ -151,13 +154,57 @@ class Event:
     def who(self):
         return self.__who
 
+    @who.setter
+    def who(self, who):
+        if who != self.who:
+            update_dict = {'who': who}
+            self.execute_update(update_dict)
+        else:
+            if not self.surpress_warning:
+                warn('New location is identical to current. No changes made')
+
     @property
     def location(self):
         return self.__location
 
+    @location.setter
+    def location(self, location):
+        if location != self.location:
+            update_dict = {'location': location}
+            self.execute_update(update_dict)
+        else:
+            if not self.surpress_warning:
+                warn('New location is identical to current. No changes made')
     @property
     def notes(self):
         return self.__notes
+
+    @notes.setter
+    def notes(self, description):
+        if description != self.notes:
+            update_dict = {'notes': description}
+            self.execute_update(update_dict)
+        else:
+            if not self.surpress_warning:
+                warn('New description is identical to current. No changes made')
+
+    @property
+    def subcalendar_ids(self):
+        return self.__subcalendar_ids
+
+    @subcalendar_ids.setter
+    def subcalendar_ids(self, ids):
+        if isinstance(ids, (str, int)):
+            ids = [ids]
+        if not isinstance(ids, (list, tuple)):
+            raise TypeError(f'Invalid type for ids. Supplied type: {type(ids)}')
+
+        if ids != self.subcalendar_ids:
+            update_dict = {'subcalendar_ids': ids}
+            self.execute_update(update_dict)
+        else:
+            if not self.surpress_warning:
+                warn('New description is identical to current. No changes made')
 
     @property
     def rrule(self):
@@ -248,10 +295,6 @@ class Event:
         return self.__batch
 
     @property
-    def subcalendar_ids(self):
-        return self.__subcalendar_ids
-
-    @property
     def aux(self):
         return self.__aux
 
@@ -259,15 +302,24 @@ class Event:
     def history(self):
         return self.__history
 
-    @subcalendar_ids.setter
-    def subcalendar_ids(self, ids):
-        warn('Not Currently Connected to the API, no changes have been made to the event on Teamup')
-        if not isinstance(ids, (int, str, list, tuple)):
-            raise TypeError(f'Invalid type for ids. Supplied type: {type(ids)}')
-        # ADD API EXECUTION HERE
-        self.__subcalendar_ids = ids
-
+    @property
+    def _update_dict(self):
+        return {
+            "id": self.event_id,
+            "subcalendar_ids": self.subcalendar_ids,
+            "start_dt": format_date(self.start_dt),
+            "end_dt": format_date(self.end_dt),
+            "version": self.version,
+            "title": self.title,
+            'notes': self.notes,
+            'all_day': self.all_day,
+            'who': self.who,
+            'location': self.location,
+            'remote_id': self.remote_id
+        }
     def execute_update(self, update_dict, surpress_warning=False):
+        """Executes an update. if Batch Mode is enabled then it will store it in the queue until batch execute is called
+        at which point batch mode is disabled and the queue passed as one single update."""
         if self.batch:
             if not surpress_warning:
                 warn('Batch Mode Enabled, Request not sent until Event.batch_submit() called')
@@ -275,12 +327,7 @@ class Event:
                 self.__batch_update_records[k] = v
             return 'Batch Updated'
         else:
-            final_update_dict = {"id": self.event_id,
-                                 "subcalendar_ids": self.subcalendar_ids,
-                                 "start_dt":format_date(self.start_dt),
-                                 "end_dt": format_date(self.end_dt),
-                                 "version": self.version
-                                 }
+            final_update_dict = self._update_dict
             for k in update_dict:
                 val = update_dict[k]
                 if isinstance(val, datetime.datetime):
@@ -303,7 +350,8 @@ class Event:
             self.__batch = True
             print('Batch Mode Enabled')
         else:
-            warn('Batch mode already enabled')
+            if not self.surpress_warning:
+                warn('Batch mode already enabled')
 
     def disable_batch_update(self, clear=False, force=False):
         """Interface for Batch Update Mode to turn the mode off. If changes are queued up then they will be erased with a warning"""
@@ -311,23 +359,34 @@ class Event:
             if self.__batch_update_records:
                 if clear:
                     to_disp_len = len(self.__batch_update_records)
-                    warn(f'Disposing of {to_disp_len} batch updates in queue')
-                    self.__batch_update_records = {}
+                    if not self.surpress_warning:
+                        warn(f'Disposing of {to_disp_len} batch updates in queue')
+                    self.__batch_update_records = OrderedDict()
                 else:
                     if not force:
                         raise Exception('Non-Empty Queue, cannot turn off batch mode. Run execute_batch() or pass clear=True or pass force=True')
+                    print('Batch Cache not cleared')
             self.__batch = False
+            print('Batch Update Disabled')
         else:
-            warn('Batch mode already disabled')
+            if not self.surpress_warning:
+                warn('Batch mode already enabled')
 
     def batch_update(self):
+        """
+        Interface for Batch Update to call the update. This necessarily turns off batch update, executes the cache, and clears the cache.
+
+        No change is made if batch queue is empty
+        :return:
+        """
         if self.batch:
             if self.__batch_update_records:
                 self.disable_batch_update(force=True)
                 self.execute_update(self.__batch_update_records)
-                self.__batch_update_records = {}
+                self.__batch_update_records = OrderedDict()
             else:
-                warn('No Updates in Queue, no request made')
+                if not self.surpress_warning:
+                    warn('No Updates in Queue, no changes made')
         else:
             raise Exception('Batch Mode Disabled')
 
