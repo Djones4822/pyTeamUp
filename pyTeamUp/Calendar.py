@@ -1,7 +1,11 @@
 import requests
 import json
 import datetime
-import pandas as pd
+import sys
+try:
+    import pandas as pd
+except:
+    from pyteamup.utils.pandas.datetimes import to_datetime
 
 from pyteamup.utils.utilities import check_status_code
 from pyteamup.utils.constants import *
@@ -79,7 +83,7 @@ class Calendar:
         self.__subcalendars = None
         self.__configuration = None
 
-    def get_event_collection(self, start_date=None, end_date=None, subcal_id=None, return_df=True):
+    def get_event_collection(self, start_date=None, end_date=None, subcal_id=None, returnas='events'):
         """
         Method allows bulk fetching of events that fall between the provided time frame. If None is provided then
         the current date -30 and +180 days is used.
@@ -89,6 +93,9 @@ class Calendar:
         :param subcal_id: optional str or list-like if a different calendar should be queried
         :return: json of events
         """
+        if returnas not in ('events', 'dataframe', 'dict'):
+            raise TypeError('Returnas not recognized. Recognized values: event, series, dict')
+
         if start_date is None:
             start_date = datetime.date.today() - datetime.timedelta(30)
         if end_date is None:
@@ -108,9 +115,12 @@ class Calendar:
         self._session_request_counter += 1
         self.events_json = json.loads(req.text)
 
-        if return_df:
-            return  pd.DataFrame.from_records(self.events_json['events'])
-        return self.events_json
+        if returnas == 'events':
+            return [Event(self, **event_dict) for event_dict in self.events_json]
+        elif returnas == 'dataframe' and 'pandas' in sys.modules:
+            return pd.DataFrame.from_records(self.events_json)
+        else:
+            return self.events_json
 
     def create_event_from_json(self, payload):
         """ Lazy Creation of Event by passing a formatted payload"""
@@ -133,17 +143,21 @@ class Calendar:
             print(resp.text)
             raise
 
-    def get_event(self, event_id):
+    def get_event(self, event_id, returnas='event'):
+        if returnas not in ('event', 'series', 'dict'):
+            raise TypeError('Returnas not recognized. Recognized values: event, series, dict')
+
         url = self._base_url + EVENTS_BASE + f'/{event_id}' + self.__token_str
         resp = requests.get(url)
         check_status_code(resp.status_code)
         event_dict = json.loads(resp.text)['event']
-        try:
+        if returnas == 'event':
             return Event(self, **event_dict)
-        except Exception as e:
-            print(e)
-            raise e
-            return resp.text
+        elif returnas == 'series' and 'pandas' in sys.modules:
+            return pd.Series(event_dict)
+        else:
+            return event_dict
+
 
     def get_subcalendar(self, subcalendar_id):
         raise NotImplementedError
