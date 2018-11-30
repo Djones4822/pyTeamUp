@@ -1,4 +1,3 @@
-""" Placeholder for Event Class that will eventually hold """
 from warnings import warn
 import requests
 import json
@@ -18,7 +17,7 @@ class Event:
                rrule=None, ristart_dt=None, rsstart_dt=None, tz=None, version=None, readonly=None, duration=None,
                creation_dt=None, update_dt=None, delete_dt=None ,signup_enabled=None, signup_deadline=None,
                signup_visibility=None, signup_limit=None, comments_enabled=None, comments_visibility=None, custom=None,
-               surpress_warning=False):
+               surpress_warning=False, undo_id=None):
 
         self.surpress_warning = surpress_warning
         self.__parent_calendar = parent_calendar
@@ -53,9 +52,10 @@ class Event:
         self.__creation_dt = to_datetime(creation_dt)
         self.__update_dt = to_datetime(update_dt)
         self.__delete_dt = to_datetime(delete_dt)
-
+        self.__undo_id = undo_id
         self.__aux = None
         self.__history = None
+        self.__deleted = bool(delete_dt)
 
         self.__batch = False
         self.__batch_update_records = OrderedDict()
@@ -72,6 +72,14 @@ class Event:
     @property
     def event_id(self):
         return self.__id
+
+    @property
+    def can_undo(self):
+        return bool(self.__undo_id)
+
+    @property
+    def deleted(self):
+        return self.__deleted
 
     @property
     def remote_id(self):
@@ -317,11 +325,15 @@ class Event:
             'location': self.location,
             'remote_id': self.remote_id
         }
-    def execute_update(self, update_dict, surpress_warning=False):
+
+    def execute_update(self, update_dict):
         """Executes an update. if Batch Mode is enabled then it will store it in the queue until batch execute is called
-        at which point batch mode is disabled and the queue passed as one single update."""
+        at which point batch mode is disabled and the queue passed as one single update.
+        :param: update_dict: Required dictionary of update elements. Should conform to the api reference from types and
+                            valid fields. Note that custom fields are not supported by the api currently.
+        """
         if self.batch:
-            if not surpress_warning:
+            if not self.surpress_warning:
                 warn('Batch Mode Enabled, Request not sent until Event.batch_submit() called')
             for k, v in update_dict.items():
                 self.__batch_update_records[k] = v
@@ -334,14 +346,12 @@ class Event:
                     val = format_date(val)
                 final_update_dict[k] = val
             final_update_json = json.dumps(final_update_dict)
-            #print(final_update_json)
             resp = requests.put(self.api_url, data=final_update_json, headers=POST_HEADERS)
             check_status_code(resp.status_code)
-
             resp_json = json.loads(resp.text)
             event_data = resp_json['event']
-            #print(event_data)
-            self.__init__(self.__parent_calendar, **event_data)
+            undo_id = resp_json['undo_id']
+            self.__init__(self.__parent_calendar, undo_id=undo_id, **event_data)
 
     def enable_batch_update(self):
         """Interface for Batch Update mode to turn the mode On. In this mode all changes to the event are cached until
@@ -354,7 +364,8 @@ class Event:
                 warn('Batch mode already enabled')
 
     def disable_batch_update(self, clear=False, force=False):
-        """Interface for Batch Update Mode to turn the mode off. If changes are queued up then they will be erased with a warning"""
+        """Interface for Batch Update Mode to turn the mode off.
+        :param: clear: Boolean, used if calling disable manually and wish to discard"""
         if self.batch:
             if self.__batch_update_records:
                 if clear:
@@ -390,6 +401,29 @@ class Event:
         else:
             raise Exception('Batch Mode is not enabled.')
 
+    def delete(self, redit=None):
+        """
+        Simple method for deleting
+        :param subcalendar_id:
+        :return:
+        """
+        if redit:
+            if not self.rrule:
+                raise AttributeError('rredit parameter included but event is not a recurring event')
+            redit_param = f'&redit={redit}'
+        else:
+            if self.rrule:
+                raise AttributeError('Recurring events require rredit paramter passed')
+            redit_param = ''
+
+        url = self.api_url + f'&version={self.version}' + redit_param
+        resp = requests.delete(url)
+        check_status_code(resp.status_code)
+        resp_json = json.loads(resp.text)
+        self.__undo_id = resp_json['undo_id']
+        self.__deleted = True
+        if not self.surpress_warning:
+            warn('Event Deleted but delete_dt not set until event is refreshed from server. Use Calendar to get the event again')
 
 
 
