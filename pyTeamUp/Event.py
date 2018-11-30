@@ -2,17 +2,22 @@
 from warnings import warn
 import requests
 import json
+from datetime import datetime
+try:
+    from pandas import to_datetime
+except:
+    from pyteamup.utils.pandas.datetimes import to_datetime
 
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
 
 class Event:
-    def __init__(self, parent_calendar, id, remote_id=None, series_id=None,subcalendar_ids=None, subcalendar_id=None, #Note that subcalendar_id is deprecated and is not used, merely caught.
+    def __init__(self, parent_calendar, id, remote_id=None, series_id=None,subcalendar_ids=None, subcalendar_id=None,
                start_dt=None, end_dt=None, all_day=None, title=None, who=None, location=None, notes=None,
                rrule=None, ristart_dt=None, rsstart_dt=None, tz=None, version=None, readonly=None, duration=None,
                creation_dt=None, update_dt=None, delete_dt=None ,signup_enabled=None, signup_deadline=None,
                signup_visibility=None, signup_limit=None, comments_enabled=None, comments_visibility=None, custom=None,
-               surpress_warning=True):
+               surpress_warning=False):
 
         self.surpress_warning = surpress_warning
         self.__parent_calendar = parent_calendar
@@ -20,16 +25,19 @@ class Event:
         self.__remote_id = remote_id
         self.__series_id = series_id
         self.__subcalendar_ids = subcalendar_ids
-        self.__start_dt = start_dt
-        self.__end_dt = end_dt
+        if subcalendar_id:
+            if not subcalendar_ids:
+                self.__subcalendar_ids = [subcalendar_id]
+        self.__start_dt = to_datetime(start_dt)
+        self.__end_dt = to_datetime(end_dt)
         self.__all_day = all_day
         self.__title = title
         self.__who = who
         self.__location = location
         self.__notes = notes
         self.__rrule = rrule
-        self.__ristart_dt = ristart_dt
-        self.__rsstart_dt = rsstart_dt
+        self.__ristart_dt = to_datetime(ristart_dt)
+        self.__rsstart_dt = to_datetime(rsstart_dt)
         self.__tz = tz
         self.__version = version
         self.__readonly = readonly
@@ -41,20 +49,25 @@ class Event:
         self.__comments_enabled = comments_enabled
         self.__comments_visibility = comments_visibility
         self.__custom = custom
-        self.__creation_dt = creation_dt
-        self.__update_dt = update_dt
-        self.__delete_dt = delete_dt
+        self.__creation_dt = to_datetime(creation_dt)
+        self.__update_dt = to_datetime(update_dt)
+        self.__delete_dt = to_datetime(delete_dt)
+
+        self.__aux = None
+        self.__history = None
 
         self.__batch = False
         self.__batch_update_records = {}
 
-        self.__aux = None
-        self.__history = None
+
         self.__api_key = self.parent_calendar.api_key
         self.__token_str = f'?_teamup_token={self.api_key}'
         self.__url = self.__parent_calendar._base_url + EVENTS_BASE + f'/{self.event_id}'
         self.__api_url = self.__url + self.__token_str
-    
+
+    def __str__(self):
+        return self.event_id
+
     @property
     def event_id(self):
         return self.__id
@@ -66,12 +79,151 @@ class Event:
     @remote_id.setter
     def remote_id(self, new_id):
         if new_id != self.remote_id:
-            raise NotImplementedError('API Not Set to Update')
+            raise NotImplementedError('pyTeamUp Not configured to Update')
         else:
             if not self.surpress_warning:
                 warn('New Remote Id is identical to current ID. No changes made')
 
+    @property
+    def start_dt(self):
+        return self.__start_dt
 
+    @start_dt.setter
+    def start_dt(self, new_date):
+        if not isinstance(new_date, datetime):
+            new_date = to_datetime(new_date)
+
+        if new_date != self.start_dt:
+            raise NotImplementedError('pyTeamUp Not configured to Update')
+        else:
+            if not self.surpress_warning:
+                warn('New Start Date is identical to current. No changes made')
+
+    @property
+    def end_dt(self):
+        return self.__end_dt
+
+    @end_dt.setter
+    def end_dt(self, new_date):
+        if not isinstance(new_date, datetime):
+            new_date = to_datetime(new_date)
+
+        if new_date != self.end_dt:
+            raise NotImplementedError('pyTeamUp Not configured to Update')
+        else:
+            if not self.surpress_warning:
+                warn('New End Date is identical to current. No changes made')
+
+    @property
+    def duration(self):
+        return self.__duration
+
+    @property
+    def all_day(self):
+        return self.__all_day
+
+    @all_day.setter
+    def all_day(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('Must pass a boolean argument as new value')
+
+        if value != self.all_day:
+            raise NotImplementedError('pyTeamUp Not configured to Update')
+        else:
+            if not self.surpress_warning:
+                warn('New all_day value is identical to current. No changes made')
+
+    @property
+    def title(self):
+        return self.__title
+
+    @title.setter
+    def title(self, new_title):
+        if new_title != self.title:
+            raise NotImplementedError('pyTeamUp Not configured to Update')
+        else:
+            if not self.surpress_warning:
+                warn('New title is identical to current. No changes made')
+
+    @property
+    def who(self):
+        return self.__who
+
+    @property
+    def location(self):
+        return self.__location
+
+    @property
+    def notes(self):
+        return self.__notes
+
+    @property
+    def rrule(self):
+        return self.__rrule
+
+    @property
+    def ristart_dt(self):
+        return self.__ristart_dt
+
+    @property
+    def rsstart_dt(self):
+        return self.__rsstart_dt
+
+    @property
+    def tz(self):
+        return self.__tz
+
+    @property
+    def version(self):
+        return self.__version
+
+    @property
+    def readonly(self):
+        return self.__readonly
+
+    @property
+    def signup_enabled(self):
+        return self.__signup_enabled
+
+    @property
+    def signup_deadline(self):
+        return self.__signup_deadline
+
+    @property
+    def signup_visibility(self):
+        return self.__signup_visibility
+
+    @property
+    def signup_limit(self):
+        return self.__signup_limit
+
+    @property
+    def comments_enabled(self):
+        return self.__comments_enabled
+
+    @property
+    def comments_visibility(self):
+        return self.__comments_visibility
+
+    @property
+    def custom(self):
+        return self.__custom
+
+    @property
+    def creation_dt(self):
+        return self.__creation_dt
+
+    @property
+    def update_dt(self):
+        return self.__update_dt
+
+    @property
+    def delete_dt(self):
+        return self.__delete_dt
+
+    @property
+    def series_id(self):
+        return self.__series_id
 
     @property
     def parent_calendar(self):
@@ -85,6 +237,7 @@ class Event:
     def url(self):
         return self.__url
 
+    @property
     def api_url(self):
         return self.__api_url
 
@@ -95,6 +248,14 @@ class Event:
     @property
     def subcalendar_ids(self):
         return self.__subcalendar_ids
+
+    @property
+    def aux(self):
+        return self.__aux
+
+    @property
+    def history(self):
+        return self.__history
 
     @subcalendar_ids.setter
     def subcalendar_ids(self, ids):
@@ -117,6 +278,7 @@ class Event:
             resp_json = json.loads(resp)
             event_data = resp_json['event']
             undo_id = resp_json['undo_id']
+            return event_data, undo_id
 
     def enable_batch_update(self):
         """Interface for Batch Update mode to turn the mode On. In this mode all changes to the event are cached until
