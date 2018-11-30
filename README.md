@@ -12,12 +12,14 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
  
 ## Example usage
     from pyteamup import Calendar, Event
-    api_key = 'example api key'
-    calendar_id = 'example calendar id'
+    
+    api_key = 'example api key'           # Get your own here: https://teamup.com/api-keys/request
+    calendar_id = 'example calendar id'   # goto www.teamup.com to sign up and get your own calendar
+    
     calendar = Calendar(calendar_id, api_key)
     event_list = Calendar.get_event_collection()
-    
     evnt = event_list.pop()
+    
     print(evnt.title)
     evnt.title = 'New Title'
     print(evnt.title)
