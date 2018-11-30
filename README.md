@@ -17,6 +17,9 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
  * Add Event Delete Support 
  * Add support for undo (api returns undo id, not sure what this is!)
  * Add Tests
+ * Add more Event endpoints (searching for events, get history, get auxilliary info)
+ * Add Access Key Endpoints
+ * Add Color Swatch Lookup (create simple assignments for red, blue, green, etc)
  * Make a release available on pip
 
 ## Installation
