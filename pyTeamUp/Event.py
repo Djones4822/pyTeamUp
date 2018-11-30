@@ -140,7 +140,9 @@ class Event:
     @title.setter
     def title(self, new_title):
         if new_title != self.title:
-            raise NotImplementedError('pyTeamUp Not configured to Update')
+            update_dict = {'title': new_title}
+            resp = self.execute_update(update_dict)
+
         else:
             if not self.surpress_warning:
                 warn('New title is identical to current. No changes made')
@@ -273,12 +275,26 @@ class Event:
                 self.__batch_update_records[k] = v
             return 'Batch Updated'
         else:
-            resp = requests.put(self.url, data=json.dumps(update_dict), headers=POST_HEADERS)
+            final_update_dict = {"id": self.event_id,
+                                 "subcalendar_ids": self.subcalendar_ids,
+                                 "start_dt":format_date(self.start_dt),
+                                 "end_dt": format_date(self.end_dt),
+                                 "version": self.version
+                                 }
+            for k in update_dict:
+                val = update_dict[k]
+                if isinstance(val, datetime.datetime):
+                    val = format_date(val)
+                final_update_dict[k] = val
+            final_update_json = json.dumps(final_update_dict)
+            print(final_update_json)
+            resp = requests.put(self.api_url, data=final_update_json, headers=POST_HEADERS)
             check_status_code(resp.status_code)
-            resp_json = json.loads(resp)
+
+            resp_json = json.loads(resp.text)
             event_data = resp_json['event']
-            undo_id = resp_json['undo_id']
-            return event_data, undo_id
+            print(event_data)
+            self.__init__(self.__parent_calendar, **event_data)
 
     def enable_batch_update(self):
         """Interface for Batch Update mode to turn the mode On. In this mode all changes to the event are cached until
@@ -289,27 +305,27 @@ class Event:
         else:
             warn('Batch mode already enabled')
 
-    def disable_batch_update(self, clear=False):
+    def disable_batch_update(self, clear=False, force=False):
         """Interface for Batch Update Mode to turn the mode off. If changes are queued up then they will be erased with a warning"""
         if self.batch:
             if self.__batch_update_records:
                 if clear:
                     to_disp_len = len(self.__batch_update_records)
                     warn(f'Disposing of {to_disp_len} batch updates in queue')
+                    self.__batch_update_records = {}
                 else:
-                    raise Exception('Non-Empty Queue, cannot turn off batch mode. Run execute_batch() or pass clear=True')
+                    if not force:
+                        raise Exception('Non-Empty Queue, cannot turn off batch mode. Run execute_batch() or pass clear=True or pass force=True')
             self.__batch = False
-            self.__batch_update_records = {}
         else:
             warn('Batch mode already disabled')
 
     def batch_update(self):
         if self.batch:
             if self.__batch_update_records:
-                resp = requests.put(self.url, data=json.dumps(self.__batch_update_records), headers=POST_HEADERS)
-                check_status_code(resp.status_code)
+                self.disable_batch_update(force=True)
+                self.execute_update(self.__batch_update_records)
                 self.__batch_update_records = {}
-                return resp.text
             else:
                 warn('No Updates in Queue, no request made')
         else:
