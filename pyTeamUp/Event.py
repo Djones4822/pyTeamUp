@@ -334,13 +334,13 @@ class Event:
                     val = format_date(val)
                 final_update_dict[k] = val
             final_update_json = json.dumps(final_update_dict)
-            print(final_update_json)
+            #print(final_update_json)
             resp = requests.put(self.api_url, data=final_update_json, headers=POST_HEADERS)
             check_status_code(resp.status_code)
 
             resp_json = json.loads(resp.text)
             event_data = resp_json['event']
-            print(event_data)
+            #print(event_data)
             self.__init__(self.__parent_calendar, **event_data)
 
     def enable_batch_update(self):
