@@ -364,7 +364,7 @@ class Event:
                     self.__batch_update_records = OrderedDict()
                 else:
                     if not force:
-                        raise Exception('Non-Empty Queue, cannot turn off batch mode. Run execute_batch() or pass clear=True or pass force=True')
+                        raise Exception('Non-Empty Queue, cannot turn off batch mode. Run batch_commit() or pass clear=True or pass force=True')
                     print('Batch Cache not cleared')
             self.__batch = False
             print('Batch Update Disabled')
