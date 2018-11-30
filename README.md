@@ -5,7 +5,8 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
 
 ## Features:
  * Pythonic access to TeamUp calendars and events.
- * Simple interface for gathering subcalendars and event containers. Can also create an event by passing an event ID.
+ * Simple interface for gathering subcalendars and event containers. Can also create an event by passing an event ID or delete and event
+   by gathering the event as an Event object and calling `event.delete()` 
  * Event Object features simple interface for updating event properties 
  * Batch mode for reducing api calls for updating multiple event properties
  * If pandas is present, Calendar can return events as Series objects and event collections as DataFrame objects
@@ -36,12 +37,14 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
     print(envt.notes)
     
     evnt.event_id = 123                  # Will raise an error because attribute is read-only
-
+       
+    evnt.delete()
+    evnt.deleted                         # Will return True
+    
 ## todo
  * Add better support for creating an event
  * Add support for updating recurring events
  * Build Subcalendar object with update support similar to Event object
- * Add Event Delete Support 
  * Add support for undo (api returns undo id, not sure what this is!)
  * Add Tests
  * Add more Event endpoints (searching for events, get history, get auxilliary info)
