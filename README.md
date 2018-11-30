@@ -17,29 +17,48 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
     api_key = 'example api key'           # Get your own here: https://teamup.com/api-keys/request
     calendar_id = 'example calendar id'   # goto www.teamup.com to sign up and get your own calendar
     
+    # Instantiate the calendar
     calendar = Calendar(calendar_id, api_key)
+    
+    # Gather Event Collections (returns a list)
     event_list = Calendar.get_event_collection()
     evnt = event_list.pop()
     
+    # Simple change of the title
     print(evnt.title)
     evnt.title = 'New Title'
     print(evnt.title)
     
+    # Batch Mode Updates
     evnt.enable_batch_mode()
     evnt.title = 'New Title 2'           # Will display a warning that no changes are made until batch_commit() is called
     print(evnt.title)                    # Will still print the old title
-    
     print(evnt.notes)
     evnt.notes = 'New Notes!'            # Will display a warning that no changes are made until batch_commit() is called
-    evnt.batch_commit()
     
+    evnt.batch_commit()
     print(evnt.title)
     print(envt.notes)
     
+    # Prevented from Editing Read-Only Attributes
     evnt.event_id = 123                  # Will raise an error because attribute is read-only
-       
+    
+    # Easy Delete and confirm
     evnt.delete()
     evnt.deleted                         # Will return True
+    
+    # Get Subcalendars (currently returns list of dictionaries)
+    subcalendars = calendar.subcalendars
+    subcal = subcalendars[0]
+    
+    # Easily Create new events
+    new_event_dict = {'title': 'New Event Title',
+                      'start_dt': datetime.datetime(2018,11,29, 14, 0, 0),
+                      'end_dt': datetime.datetime(2018, 11, 29, 14, 0, 0),
+                      'subcalendar_ids': subcal['id'],
+                      'notes': 'This is the description!'}
+    new_event = Calendar.new_event(**new_event_dict, returnas='event')
+    print(new_event.event_id)
     
 ## todo
  * Add support for updating recurring events
