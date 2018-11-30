@@ -71,7 +71,6 @@ print(evnt.is_deleted)                         # Will return True
  * Add more Event endpoints (searching for events, get history, get auxilliary info)
  * Add Access Key Endpoints
  * Add Color Swatch Lookup (create simple assignments for red, blue, green, etc)
- * Make a release available on pip
  * Add support for password protected calendars
 
 ## Installation
