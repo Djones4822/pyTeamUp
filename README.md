@@ -61,8 +61,6 @@ evnt.event_id = 123                  # Will raise an error because attribute is 
 # Easy Delete and confirm
 evnt.delete()
 print(evnt.is_deleted)                         # Will return True
-
-# Get Subcalendars (currently returns list of dictionaries)
 ```
 
 ## todo
@@ -81,10 +79,6 @@ Using pip Current Version: 0.1.0a1):
 ```
 python -m pip install pyTeamUp
 ```
-
-
-
-From Github:
 
 
 ## Batch Mode
