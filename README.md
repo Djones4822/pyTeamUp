@@ -1,7 +1,7 @@
 # pyTeamUp
 Python API wrapper for TeamUp API. In early stages, only has event and calendar objects implemented. 
 
-**version**: 0.1.5a
+**version**: 0.1.0a1
 
 ## Features:
  * Pythonic access to TeamUp calendars and events.
@@ -21,6 +21,19 @@ calendar_id = 'example calendar id'   # goto www.teamup.com to sign up and get y
 
 # Instantiate the calendar
 calendar = Calendar(calendar_id, api_key)
+
+# Get Subcalendars
+subcalendars = calendar.subcalendars
+subcal = subcalendars[0]
+
+# Easily Create new events
+new_event_dict = {'title': 'New Event Title',
+                  'start_dt': datetime(2018,11,29, 14, 0, 0),
+                  'end_dt': datetime(2018, 11, 29, 14, 0, 0),
+                  'subcalendar_ids': subcal['id'],
+                  'notes': 'This is the description!'}
+new_event = Calendar.new_event(**new_event_dict, returnas='event')
+print(new_event.event_id)
 
 # Gather Event Collections (returns a list)
 event_list = Calendar.get_event_collection()
@@ -50,17 +63,6 @@ evnt.delete()
 print(evnt.is_deleted)                         # Will return True
 
 # Get Subcalendars (currently returns list of dictionaries)
-subcalendars = calendar.subcalendars
-subcal = subcalendars[0]
-
-# Easily Create new events
-new_event_dict = {'title': 'New Event Title',
-                  'start_dt': datetime(2018,11,29, 14, 0, 0),
-                  'end_dt': datetime(2018, 11, 29, 14, 0, 0),
-                  'subcalendar_ids': subcal['id'],
-                  'notes': 'This is the description!'}
-new_event = Calendar.new_event(**new_event_dict, returnas='event')
-print(new_event.event_id)
 ```
 
 ## todo
@@ -75,7 +77,15 @@ print(new_event.event_id)
  * Add support for password protected calendars
 
 ## Installation
-*coming soon*
+Using pip Current Version: 0.1.0a1):
+```
+python -m pip install pyTeamUp
+```
+
+
+
+From Github:
+
 
 ## Batch Mode
 Events objects feature a batch mode for setting multiple values with a single api call, reducing your api usage and reducing the liklihood of TeamUp disabling your api key! Simply call `event.enable_batch_mode()` and begin making changes. When satisfied changes can be commited by calling `event.batch_commit()` which will automatically exit batch mode after, or call `event.disable_batch_mode(clear=True)` to discard changes. 

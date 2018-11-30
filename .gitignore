@@ -2,3 +2,6 @@
 .idea/
 __pycache__/
 venv/
+dist/
+build/
+pyTeamUp.egg-info/
