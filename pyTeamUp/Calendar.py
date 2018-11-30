@@ -7,7 +7,7 @@ try:
 except:
     from pyteamup.utils.pandas.datetimes import to_datetime
 
-from pyteamup.utils.utilities import check_status_code
+from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
 from pyteamup.event import Event
 
@@ -122,7 +122,7 @@ class Calendar:
         else:
             return self.events_json
 
-    def create_event_from_json(self, payload):
+    def _create_event_from_json(self, payload):
         """ Lazy Creation of Event by passing a formatted payload"""
         resp = requests.post(self._event_collection_url, data=payload, headers=POST_HEADERS)
         try:
@@ -131,6 +131,7 @@ class Calendar:
         except:
             print(resp.text)
             raise
+        return resp.text
 
     def get_event(self, event_id, returnas='event'):
         if returnas not in ('event', 'series', 'dict'):
@@ -147,9 +148,62 @@ class Calendar:
         else:
             return event_dict
 
-    def get_subcalendar(self, subcalendar_id):
+    def get_subcalendar(self):
         raise NotImplementedError
 
+    def search_events(self):
+        raise NotImplementedError
 
-if __name__ == '__main__':
-    pass
+    def get_changed_events(self):
+        raise NotImplementedError
+
+    def new_event(self, title, start_dt, end_dt, subcalendar_ids, all_day=False,
+                  notes=None, location=None, who=None, remote_id=None, returnas='event'):
+        """
+        Create a new event within a provided subcalendar. Can return as Event object, Series object, or Dictionary.
+
+        Undo_id not included with return unless returnas='event' in which case it is included with the returned Event Object
+
+        :param subcalendar_id: <str, int, or list-like> Required - the ID of the subcalendar within the calendar the event should be created in.
+        :param title: <str> Title of the event, must be
+        :param start_dt: <datetime> Start Datetime
+        :param end_dt: <datetime> End Datetime
+        :param all_day: <Bool> Allday or Not
+        :param notes: <str> HTML or Markdown formatted string detailing the Description
+        :param location: <str> Location of the event
+        :param who: <str>
+        :param remote_id: <str> Remote ID of the event, used to link the TeamUp event record to its source information
+        :param returnas: <str> `event` `series` `dict` are valid options
+        :return:
+        """
+        if returnas not in ('event','dict','series'):
+            raise ValueError(f'Unrecognized returnas paramter: {returnas}')
+        if not isinstance(start_dt, datetime.datetime) or not isinstance(end_dt, datetime.datetime):
+            raise ValueError('All dates must be passed as a datetime object')
+        if isinstance(subcalendar_ids, (str, int)):
+            subcalendar_ids = [subcalendar_ids]
+        if not isinstance(subcalendar_ids, (tuple, list)):
+            raise ValueError(f'Unrecognized Type: Subcalendar_ids type: {type(subcalendar_ids)}')
+
+        dict = {'remote_id': remote_id,
+                'title': title,
+                'subcalendar_ids': subcalendar_ids,
+                'start_dt': format_date(start_dt),
+                'end_dt': format_date(end_dt),
+                'all_day': all_day,
+                'notes': notes,
+                'location': location,
+                'who': who
+                }
+
+        resp_text = self._create_event_from_json(json.dumps(dict))
+        resp_dict = json.loads(resp_text)
+        event_dict = resp_dict['event']
+        undo_id = resp_dict['undo_id']
+
+        if returnas == 'event':
+            return Event(self, undo_id = undo_id, **event_dict)
+        elif returnas == 'series' and 'pandas' in sys.modules:
+            return pd.Series(event_dict)
+        else:
+            return event_dict
