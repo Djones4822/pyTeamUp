@@ -77,7 +77,7 @@ class Event:
         return bool(self.__undo_id)
 
     @property
-    def deleted(self):
+    def is_deleted(self):
         return self.__deleted
 
     @property
