@@ -60,7 +60,6 @@ class Event:
         self.__batch = False
         self.__batch_update_records = OrderedDict()
 
-
         self.__api_key = self.parent_calendar.api_key
         self.__token_str = f'?_teamup_token={self.api_key}'
         self.__url = self.__parent_calendar._base_url + EVENTS_BASE + f'/{self.event_id}'
