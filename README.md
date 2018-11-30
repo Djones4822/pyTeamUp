@@ -21,7 +21,7 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
 ## Installation
 *coming soon*
 
-##Batch Mode
+## Batch Mode
 Events objects feature a batch mode for setting multiple values with a single api call, reducing your api usage and reducing the liklihood of TeamUp disabling your api key! Simply call `event.enable_batch_mode()` and begin making changes. When satisfied changes can be commited by calling `event.batch_commit()` which will automatically exit batch mode after, or call `event.disable_batch_mode(clear=True)` to discard changes. 
 
 Setting event data without enabling batch mode will cause each change to use an api request. 
