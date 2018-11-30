@@ -158,7 +158,6 @@ class Calendar:
         else:
             return event_dict
 
-
     def get_subcalendar(self, subcalendar_id):
         raise NotImplementedError
 

@@ -372,7 +372,7 @@ class Event:
             if not self.surpress_warning:
                 warn('Batch mode already enabled')
 
-    def batch_update(self):
+    def batch_commit(self):
         """
         Interface for Batch Update to call the update. This necessarily turns off batch update, executes the cache, and clears the cache.
 
@@ -386,9 +386,9 @@ class Event:
                 self.__batch_update_records = OrderedDict()
             else:
                 if not self.surpress_warning:
-                    warn('No Updates in Queue, no changes made')
+                    warn('No Updates in Queue, no changes made, batch mode still enabled.')
         else:
-            raise Exception('Batch Mode Disabled')
+            raise Exception('Batch Mode is not enabled.')
 
 
 
