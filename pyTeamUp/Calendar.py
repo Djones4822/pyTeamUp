@@ -113,7 +113,7 @@ class Calendar:
         req = requests.get(self._event_collection_url + parameters)
         check_status_code(req.status_code)
         self._session_request_counter += 1
-        self.events_json = json.loads(req.text)
+        self.events_json = json.loads(req.text)['events']
 
         if returnas == 'events':
             return [Event(self, **event_dict) for event_dict in self.events_json]
