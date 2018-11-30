@@ -16,6 +16,7 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
  * Build Subcalendar object with update support similar to Event object
  * Add Event Delete Support 
  * Add support for undo (api returns undo id, not sure what this is!)
+ * Add Tests
  * Make a release available on pip
 
 ## Installation
