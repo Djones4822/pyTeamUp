@@ -9,6 +9,31 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
  * Event Object features simple interface for updating event properties 
  * Batch mode for reducing api calls for updating multiple event properties
  * If pandas is present, Calendar can return events as Series objects and event collections as DataFrame objects
+ 
+## Example usage
+    from pyteamup import Calendar, Event
+    api_key = 'example api key'
+    calendar_id = 'example calendar id'
+    calendar = Calendar(calendar_id, api_key)
+    event_list = Calendar.get_event_collection()
+    
+    evnt = event_list.pop()
+    print(evnt.title)
+    evnt.title = 'New Title'
+    print(evnt.title)
+    
+    evnt.enable_batch_mode()
+    evnt.title = 'New Title 2'           # Will display a warning that no changes are made until batch_commit() is called
+    print(evnt.title)                    # Will still print the old title
+    
+    print(evnt.notes)
+    evnt.notes = 'New Notes!'            # Will display a warning that no changes are made until batch_commit() is called
+    evnt.batch_commit()
+    
+    print(evnt.title)
+    print(envt.notes)
+    
+    evnt.event_id = 123                  # Will raise an error because attribute is read-only
 
 ## todo
  * Add better support for creating an event
