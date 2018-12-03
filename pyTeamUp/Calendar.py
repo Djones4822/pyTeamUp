@@ -25,7 +25,6 @@ class Calendar:
         self._event_collection_url = self._base_url + EVENTS_BASE + self.__token_str
         self._subcalendars_url = self._base_url + SUBCALENDARS_BASE + self.__token_str
         self._check_access_url = BASE_URL + CHECK_ACCESS_BASE + self.__token_str
-        self._session_request_counter = 0
 
         self.events_json = None
 
@@ -50,7 +49,6 @@ class Calendar:
             req = requests.get(self._check_access_url)
             try:
                 check_status_code(req.status_code)
-                self._session_request_counter += 1
                 self.__valid_api = True
             except:
                 self.__valid_api = False
@@ -65,7 +63,6 @@ class Calendar:
             print('Fetching configuration')
             req = requests.get(self._base_url + CONFIGURATION_BASE + self.__token_str)
             check_status_code(req.status_code)
-            self._session_request_counter += 1
             self.__configuration = json.loads(req.text)['configuration']
         return self.__configuration
 
@@ -75,7 +72,6 @@ class Calendar:
             print('Fetching Subcalendars')
             req = requests.get(self._subcalendars_url)
             check_status_code(req.status_code)
-            self._session_request_counter += 1
             self.__subcalendars = json.loads(req.text)['subcalendars']
         return self.__subcalendars
 
@@ -112,7 +108,6 @@ class Calendar:
         parameters = f'&startDate={start_date.strftime("%Y-%m-%d")}&endDate={end_date.strftime("%Y-%m-%d")}' + subcal_par
         req = requests.get(self._event_collection_url + parameters)
         check_status_code(req.status_code)
-        self._session_request_counter += 1
         self.events_json = json.loads(req.text)['events']
 
         if returnas == 'events':
@@ -127,8 +122,8 @@ class Calendar:
         resp = requests.post(self._event_collection_url, data=payload, headers=POST_HEADERS)
         try:
             check_status_code(resp.status_code)
-            self._session_request_counter += 1
         except:
+            print(payload)
             print(resp.text)
             raise
         return resp.text
@@ -179,7 +174,11 @@ class Calendar:
         if returnas not in ('event','dict','series'):
             raise ValueError(f'Unrecognized returnas paramter: {returnas}')
         if not isinstance(start_dt, datetime.datetime) or not isinstance(end_dt, datetime.datetime):
-            raise ValueError('All dates must be passed as a datetime object')
+            try:
+                start_dt = pd.to_datetime(start_dt)
+                end_dt = pd.to_datetime(end_dt)
+            except:
+                raise ValueError('All dates must be passed as a datetime object')
         if isinstance(subcalendar_ids, (str, int)):
             subcalendar_ids = [subcalendar_ids]
         if not isinstance(subcalendar_ids, (tuple, list)):
