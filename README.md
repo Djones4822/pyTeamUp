@@ -66,12 +66,13 @@ print(evnt.is_deleted)                         # Will return True
 ## todo
  * Add support for updating recurring events
  * Build Subcalendar object with update support similar to Event object
- * Add support for undo (api returns undo id, not sure what this is!)
  * Add Tests
- * Add more Event endpoints (searching for events, get history, get auxilliary info)
+ * Add more Event endpoints (get history, get auxilliary info)
+ * Add More Calendar endpoints (searching for events, events changed)
  * Add Access Key Endpoints
  * Add Color Swatch Lookup (create simple assignments for red, blue, green, etc)
  * Add support for password protected calendars
+ * Add support for beta features: undo, custom fields, comments, signup
 
 ## Installation
 Using pip Current Version: 0.1.0a1):
