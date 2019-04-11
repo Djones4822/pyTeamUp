@@ -68,7 +68,7 @@ print(evnt.is_deleted)                         # Will return True
  * Build Subcalendar object with update support similar to Event object
  * Add Tests
  * Add more Event endpoints (get history, get auxilliary info)
- * Add More Calendar endpoints (searching for events, events changed)
+ * Add More Calendar endpoints (searching for events)
  * Add Access Key Endpoints
  * Add Color Swatch Lookup (create simple assignments for red, blue, green, etc)
  * Add support for password protected calendars
