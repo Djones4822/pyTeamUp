@@ -149,8 +149,27 @@ class Calendar:
     def search_events(self):
         raise NotImplementedError
 
-    def get_changed_events(self):
-        raise NotImplementedError
+    def get_changed_events(self, modified_since, returnas='event'):
+        """
+        Get changed events since given unix time
+        :param modified_since: <int> Unix timestamp, must be less than 30 days old
+        :param returnas: <str> `event` `series` `dict` are valid options
+        :return: Tuple of event list and returned timestamp
+        """
+        if returnas not in ('event', 'series', 'dict'):
+            raise TypeError('Returnas not recognized. Recognized values: event, series, dict')
+        url = self._base_url + EVENTS_BASE + self.__token_str + '&modifiedSince=' + str(modified_since)
+        resp = requests.get(url)
+        check_status_code(resp.status_code)
+        events_json = json.loads(resp.text)['events']
+        timestamp = json.loads(resp.text)['timestamp']
+
+        if returnas == 'events':
+            return [Event(self, **event_dict) for event_dict in events_json], timestamp
+        elif returnas == 'dataframe' and 'pandas' in sys.modules:
+            return pd.DataFrame.from_records(events_json), timestamp
+        else:
+            return events_json, timestamp
 
     def new_event(self, title, start_dt, end_dt, subcalendar_ids, all_day=False,
                   notes=None, location=None, who=None, remote_id=None, returnas='event'):
@@ -206,3 +225,4 @@ class Calendar:
             return pd.Series(event_dict)
         else:
             return event_dict
+
