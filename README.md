@@ -1,7 +1,7 @@
 # pyTeamUp
 Python API wrapper for TeamUp API. In early stages, only has event and calendar objects implemented. 
 
-**version**: 0.1.0a2
+**version**: 0.1.1a
 
 ## Features:
  * Pythonic access to TeamUp calendars and events.
