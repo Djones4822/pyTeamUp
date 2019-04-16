@@ -11,6 +11,6 @@ __author__ = 'David Jones'
 
 name = 'pyTeamUp'
 
-from pyteamup.Calendar import Calendar
-from pyteamup.Event import Event
+from pyTeamUp.Calendar import Calendar
+from pyTeamUp.Event import Event
 
