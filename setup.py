@@ -5,12 +5,12 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name = 'pyTeamUp',
-    version = '0.1.3a',
+    version = '0.1.1a',
     author = 'David Jones',
     author_email = 'David.jone4822@gmail.com',
     description = 'Python wrapper for TeamUp Calendar\'s API',
     long_description = long_description,
-    long_description_content_tpye = "text/markdown",
+    long_description_content_type = "text/markdown",
     url = "https://github.com/DJones4822/pyTeamUp",
     packages = setuptools.find_packages(),
     classifiers = ["Programming Language :: Python :: 3",
