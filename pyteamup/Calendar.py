@@ -9,7 +9,7 @@ except:
 
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
-from pyteamup.event import Event
+from pyteamup.Event import Event
 
 class Calendar:
     def __init__(self, cal_id, api_key):
