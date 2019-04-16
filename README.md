@@ -95,6 +95,10 @@ none
 
 ## Change Log  
 
+**0.1.1a**
+* Fixed versioning
+* Fixed file names, fixed import bug 
+
 **0.1.0a2** 
 * Added "get_changed_events" method to Calendar (credit: vranki)
 

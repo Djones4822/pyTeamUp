@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name = 'pyTeamUp',
-    version = '0.1.0a1',
+    version = '0.1.3a',
     author = 'David Jones',
     author_email = 'David.jone4822@gmail.com',
     description = 'Python wrapper for TeamUp Calendar\'s API',
