@@ -75,7 +75,7 @@ print(evnt.is_deleted)                         # Will return True
  * Add support for beta features: undo, custom fields, comments, signup
 
 ## Installation
-Using pip Current Version: 0.1.2a):
+Using pip (Current Version: 0.1.1a):
 ```
 python -m pip install pyTeamUp
 ```
