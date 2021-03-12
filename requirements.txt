@@ -1,5 +1,6 @@
 pandas
 requests
 datetime
-dateutil
 numpy
+python-dateutil; python_version >= '3'
+dateutil; python_version < '3'
