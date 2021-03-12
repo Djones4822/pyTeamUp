@@ -3,10 +3,7 @@ import requests
 import json
 from datetime import datetime
 from collections import OrderedDict
-try:
-    from pandas import to_datetime
-except:
-    from pyteamup.utils.pandas.datetimes import to_datetime
+from dateutil.parser import parse as to_datetime
 
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
@@ -28,16 +25,16 @@ class Event:
         if subcalendar_id:
             if not subcalendar_ids:
                 self.__subcalendar_ids = [subcalendar_id]
-        self.__start_dt = to_datetime(start_dt)
-        self.__end_dt = to_datetime(end_dt)
+        self.__start_dt = to_datetime(start_dt) if start_dt else None
+        self.__end_dt = to_datetime(end_dt) if end_dt else None
         self.__all_day = all_day
         self.__title = title
         self.__who = who
         self.__location = location
         self.__notes = notes
         self.__rrule = rrule
-        self.__ristart_dt = to_datetime(ristart_dt)
-        self.__rsstart_dt = to_datetime(rsstart_dt)
+        self.__ristart_dt = to_datetime(ristart_dt) if ristart_dt else None
+        self.__rsstart_dt = to_datetime(rsstart_dt) if rsstart_dt else None
         self.__tz = tz
         self.__version = version
         self.__readonly = readonly
@@ -50,8 +47,8 @@ class Event:
         self.__comments_visibility = comments_visibility
         self.__custom = custom
         self.__creation_dt = to_datetime(creation_dt)
-        self.__update_dt = to_datetime(update_dt)
-        self.__delete_dt = to_datetime(delete_dt)
+        self.__update_dt = to_datetime(update_dt) if update_dt else None
+        self.__delete_dt = to_datetime(delete_dt) if delete_dt else None
         self.__undo_id = undo_id
         self.__aux = None
         self.__history = None
@@ -98,12 +95,11 @@ class Event:
         return self.__start_dt
 
     @start_dt.setter
-    def start_dt(self, new_date):
-        if not isinstance(new_date, datetime):
-            new_date = to_datetime(new_date)
-
-        if new_date != self.start_dt:
-            update_dict = {'start_dt': new_date}
+    def start_dt(self, new_dt):
+        if not isinstance(new_dt, datetime):
+            new_dt = to_datetime(new_dt)
+        if new_dt != self.start_dt:
+            update_dict = {'start_dt': new_dt}
             self.execute_update(update_dict)
         else:
             if not self.surpress_warning:
@@ -114,11 +110,11 @@ class Event:
         return self.__end_dt
 
     @end_dt.setter
-    def end_dt(self, new_date):
-        if not isinstance(new_date, datetime):
-            new_date = to_datetime(new_date)
-        if new_date != self.end_dt:
-            update_dict = {'end_dt': new_date}
+    def end_dt(self, new_dt):
+        if not isinstance(new_dt, datetime):
+            new_dt = to_datetime(new_dt)
+        if new_dt != self.end_dt:
+            update_dict = {'end_dt': new_dt}
             self.execute_update(update_dict)
         else:
             if not self.surpress_warning:

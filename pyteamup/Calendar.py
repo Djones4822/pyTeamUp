@@ -2,14 +2,16 @@ import requests
 import json
 import datetime
 import sys
+from dateutil.parser import parse as to_datetime
 try:
     import pandas as pd
 except:
-    from pyteamup.utils.pandas.datetimes import to_datetime
+    pass
 
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
 from pyteamup.Event import Event
+
 
 class Calendar:
     def __init__(self, cal_id, api_key):
@@ -79,23 +81,23 @@ class Calendar:
         self.__subcalendars = None
         self.__configuration = None
 
-    def get_event_collection(self, start_date=None, end_date=None, subcal_id=None, returnas='events'):
+    def get_event_collection(self, start_dt=None, end_dt=None, subcal_id=None, returnas='events'):
         """
         Method allows bulk fetching of events that fall between the provided time frame. If None is provided then
         the current date -30 and +180 days is used.
 
-        :param start_date: if set as None then set as today minus 30 days
-        :param end_date:  if left as None then set as today plus 180 days
+        :param start_dt: if set as None then set as today minus 30 days
+        :param end_dt:  if left as None then set as today plus 180 days
         :param subcal_id: optional str or list-like if a different calendar should be queried
         :return: json of events
         """
         if returnas not in ('events', 'dataframe', 'dict'):
             raise TypeError('Returnas not recognized. Recognized values: event, series, dict')
 
-        if start_date is None:
-            start_date = datetime.date.today() - datetime.timedelta(30)
-        if end_date is None:
-            end_date = datetime.date.today() + datetime.timedelta(180)
+        if start_dt is None:
+            start_dt = datetime.date.today() - datetime.timedelta(30)
+        if end_dt is None:
+            end_dt = datetime.date.today() + datetime.timedelta(180)
 
         subcal_par = ''
         if subcal_id:
@@ -105,7 +107,7 @@ class Calendar:
             else:
                 subcal_par = f'&subcalendarId[]={subcal_id}'
 
-        parameters = f'&startDate={start_date.strftime("%Y-%m-%d")}&endDate={end_date.strftime("%Y-%m-%d")}' + subcal_par
+        parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par
         req = requests.get(self._event_collection_url + parameters)
         check_status_code(req.status_code)
         self.events_json = json.loads(req.text)['events']
@@ -194,10 +196,10 @@ class Calendar:
             raise ValueError(f'Unrecognized returnas paramter: {returnas}')
         if not isinstance(start_dt, datetime.datetime) or not isinstance(end_dt, datetime.datetime):
             try:
-                start_dt = pd.to_datetime(start_dt)
-                end_dt = pd.to_datetime(end_dt)
+                start_dt = to_datetime(start_dt)
+                end_dt = to_datetime(end_dt)
             except:
-                raise ValueError('All dates must be passed as a datetime object')
+                raise ValueError('Parse failed, please pass all dates as a datetime object')
         if isinstance(subcalendar_ids, (str, int)):
             subcalendar_ids = [subcalendar_ids]
         if not isinstance(subcalendar_ids, (tuple, list)):

@@ -1,7 +1,7 @@
 # pyTeamUp
 Python API wrapper for TeamUp API. In early stages, only has event and calendar objects implemented. 
 
-**version**: 0.1.1a
+**version**: 0.1.2a
 
 ## Features:
  * Pythonic access to TeamUp calendars and events.
@@ -32,11 +32,11 @@ new_event_dict = {'title': 'New Event Title',
                   'end_dt': datetime(2018, 11, 29, 14, 0, 0),
                   'subcalendar_ids': subcal['id'],
                   'notes': 'This is the description!'}
-new_event = Calendar.new_event(**new_event_dict, returnas='event')
+new_event = calendar.new_event(**new_event_dict, returnas='event')
 print(new_event.event_id)
 
 # Gather Event Collections (returns a list)
-event_list = Calendar.get_event_collection()
+event_list = calendar.get_event_collection()    # Note that the default start_dt and end_dt are -30 days and +180 days from today respectively
 evnt = event_list.pop()
 
 # Simple change of the title
@@ -45,7 +45,7 @@ evnt.title = 'New Title'
 print(evnt.title)
 
 # Batch Mode Updates
-evnt.enable_batch_mode()
+evnt.enable_batch_update()
 evnt.title = 'New Title 2'           # Will display a warning that no changes are made until batch_commit() is called
 print(evnt.title)                    # Will still print the old title
 print(evnt.notes)
@@ -75,7 +75,7 @@ print(evnt.is_deleted)                         # Will return True
  * Add support for beta features: undo, custom fields, comments, signup
 
 ## Installation
-Using pip Current Version: 0.1.0a1):
+Using pip Current Version: 0.1.2a):
 ```
 python -m pip install pyTeamUp
 ```
@@ -94,6 +94,12 @@ none
 
 
 ## Change Log  
+**0.1.2a**
+* Refactored date parameters in all object methods to use `dt` instead of `date` (requested by: LoreKeeperKen)
+* Eliminated unnecessary reproduction of pandas `to_datetime` in favor of `dateutil`'s `parse` 
+* Refactored check_status_code
+* minor Pep8 adjustments
+* fixed readme code errors
 
 **0.1.1a**
 * Fixed versioning
