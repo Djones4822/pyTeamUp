@@ -1,6 +1,4 @@
-pandas
 requests
 datetime
-numpy
-python-dateutil; python_version >= '3'
-dateutil; python_version < '3'
+python-dateutil
+
