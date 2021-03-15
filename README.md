@@ -1,7 +1,7 @@
 # pyTeamUp
 Python API wrapper for TeamUp API. In early stages, only has event and calendar objects implemented. 
 
-**version**: 0.1.2a
+**version**: 0.1.3a
 
 ## Features:
  * Pythonic access to TeamUp calendars and events.
@@ -75,7 +75,7 @@ print(evnt.is_deleted)                         # Will return True
  * Add support for beta features: undo, custom fields, comments, signup
 
 ## Installation
-Using pip (Current Version: 0.1.2a):
+Using pip (Current Version: 0.1.3a):
 ```
 python -m pip install pyTeamUp
 ```
@@ -94,6 +94,9 @@ none
 
 
 ## Change Log  
+**0.1.3a**
+* Refactored utilities `format_date` to use better timestamp awareness. 
+
 **0.1.2a**
 * Refactored date parameters in all object methods to use `dt` instead of `date` (requested by: LoreKeeperKen)
 * Eliminated unnecessary reproduction of pandas `to_datetime` in favor of `dateutil`'s `parse` 
