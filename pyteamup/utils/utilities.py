@@ -1,5 +1,4 @@
 import datetime
-from time import gmtime, strftime
 
 RESPONSES = {
     400: '400: Bad Request -- Invalid Request',
@@ -23,13 +22,12 @@ def check_status_code(status_code):
     return RESPONSES.get(status_code, f'Unknown but Ok: {status_code}')
 
 
-def get_sys_utc_offset_str():
-    return (strftime("%z", gmtime()))
-
-
 def format_date(date):
     if not isinstance(date, datetime.datetime):
         raise TypeError
-    tz_offset = get_sys_utc_offset_str()
-    return date.strftime('%Y-%m-%dT%H:%M:%S') + tz_offset
+
+    if date.tzinfo is None:
+        return date.strftime('%Y-%m-%dT%H:%M:%S')
+    else:
+        return date.strftime('%Y-%m-%dT%H:%M:%S%z')
 
