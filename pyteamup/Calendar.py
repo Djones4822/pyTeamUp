@@ -81,7 +81,7 @@ class Calendar:
         self.__subcalendars = None
         self.__configuration = None
 
-    def get_event_collection(self, start_dt=None, end_dt=None, subcal_id=None, returnas='events'):
+    def get_event_collection(self, start_dt=None, end_dt=None, subcal_id=None, returnas='events', markdown=False):
         """
         Method allows bulk fetching of events that fall between the provided time frame. If None is provided then
         the current date -30 and +180 days is used.
@@ -107,7 +107,12 @@ class Calendar:
             else:
                 subcal_par = f'&subcalendarId[]={subcal_id}'
 
-        parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par
+        if markdown == True:
+            para_markdown = '&format[]=markdown'
+        else:
+            para_markdown = ''
+            
+        parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par + para_markdown
         req = requests.get(self._event_collection_url + parameters)
         check_status_code(req.status_code)
         self.events_json = json.loads(req.text)['events']
