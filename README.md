@@ -13,7 +13,7 @@ Python API wrapper for TeamUp API. In early stages, only has event and calendar 
  
 ## Example usage
 ```python
-from pyteamup import Calendar, Event
+from pyteamup import Calendar, Event, Keys
 from datetime import datetime
 
 api_key = 'example api key'           # Get your own here: https://teamup.com/api-keys/request
@@ -61,6 +61,49 @@ evnt.event_id = 123                  # Will raise an error because attribute is 
 # Easy Delete and confirm
 evnt.delete()
 print(evnt.is_deleted)                         # Will return True
+
+## Access Keys
+# Initalize Key Controller
+keys = Keys(cal, api)
+
+# Create new Access Keys
+jt = keys.create_key('Johnny Test', key_share_type='all_subcalendars', key_perms='read_only') 
+myperms = {                                             # Each permission applies to specified Subcalendar
+    "000000": "modify",                                 # Allows Key to Read, Add and Modify all events
+    "000000": "modify_from_same_link",                  # Allows Key to Read, Add and Modify events made by this key
+    "000000": "add_only",                               # Allows Key to Read and Add events
+    "000000": "read_only",                              # Allows Key to Read events
+    "000000": "modify_from_same_link_without_details",  # Allows Key to Read, Add and Modify events made by this key, Titles Only
+    "000000": "add_only_without_details",               # Allows Key to Read and Add events, Titles Only
+    "000000": "read_only_without_details",              # Allows Key to Read events, Titles Only
+    "000000": "no_access",                              # Hides subcalendar from Key
+}
+tt = keys.create_key('Tommy Test', key_share_type='selected_subcalendars', key_perms=myperms, key_all_other='read_only') # key_all_other sets remaining calendars and default for new calendars. if omitted, default is no_access
+
+# Update Tommy's key to admin
+tt = keys.update_key(tt['key'], key_perms='admin')
+
+# Change Johnny's key access
+jt = keys.update_key(jt['key'], key_share_type='selected_subcalendars', key_perms=myperms, key_all_other='add_only')
+
+# Find Bobby's Key
+try:
+    bt = keys.find_key('Bobby Test') # Raises an Exception if not found.
+except Exception as e:
+    if "not found" in e:
+        print("Bobby Test not found")
+    else:
+        print(e)
+        raise
+
+# Disable Johnny's key
+jt = keys.update_key(jt['key'], key_active=False)
+
+# Build a link for bobby
+print('Bobby\'s Link is: https://teamup.com/' + bt['key'])
+
+# Delete a Johnny's key
+keys.delete_key(jt['id'])
 ```
 
 ## todo
@@ -69,7 +112,6 @@ print(evnt.is_deleted)                         # Will return True
  * Add Tests
  * Add more Event endpoints (get history, get auxilliary info)
  * Add More Calendar endpoints (searching for events)
- * Add Access Key Endpoints
  * Add Color Swatch Lookup (create simple assignments for red, blue, green, etc)
  * Add support for password protected calendars
  * Add support for beta features: undo, custom fields, comments, signup
@@ -94,6 +136,19 @@ none
 
 
 ## Change Log  
+**0.1.4a**
+* Added the following Access Key endpoints
+* `get_keys`
+* `get_key`
+* `create_key` with custom argument `key_all_other` for setting default role and any unspcified subcal's permission to default
+* `update_key` with custom argument `key_all_other` as above
+* `delete_key`
+* Added the following custom functions
+* `find_key_by_name` Supports, Case Sensitive, Exact Match. Returns list if multiple matches.
+
+**0.1.3b**
+* Added Markdown support to `get_event_collection`
+
 **0.1.3a**
 * Refactored utilities `format_date` to use better timestamp awareness. 
 
