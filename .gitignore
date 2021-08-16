@@ -5,3 +5,5 @@ venv/
 dist/
 build/
 pyTeamUp.egg-info/
+# LogicallyUnfit's Test Files
+logic.py
