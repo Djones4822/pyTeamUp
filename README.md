@@ -1,7 +1,9 @@
 # pyTeamUp
 Python API wrapper for TeamUp API. In early stages, only has event and calendar objects implemented. 
 
-**version**: 0.1.3a
+**version**: 0.1.4a 
+
+**Note**: version 0.1.4a is required for working with the TeamUp API as of 11/26/2021. This version adds basic support for `atttachment` event attribute, but  since it is undocumented in the official API there is no way to add or remove attachments. They can be viewed using `event.attachments` if set through the Web interface.
 
 ## Features:
  * Pythonic access to TeamUp calendars and events.
@@ -75,7 +77,7 @@ print(evnt.is_deleted)                         # Will return True
  * Add support for beta features: undo, custom fields, comments, signup
 
 ## Installation
-Using pip (Current Version: 0.1.3a):
+Using pip (Current Version: 0.1.4a):
 ```
 python -m pip install pyTeamUp
 ```
@@ -94,8 +96,8 @@ none
 
 
 ## Change Log  
-**0.1.3b**
-* Added `attachment` to Event to event class to fix new undocumented change to teamup api.
+**0.1.4a**
+* Added basic support for `Event.attachment` property to `Event` class to fix new undocumented change to teamup api. (credit: LogicallyUnfit)
 
 **0.1.3a**
 * Refactored utilities `format_date` to use better timestamp awareness. 
@@ -116,3 +118,8 @@ none
 
 **0.1.0a1** 
 * Initial realease
+
+
+## Contributors
+Thank you to vranki for helping add features to the library, and LogicallyUnfit for helping keep the library stable during an undocumented API change. 
+ 
