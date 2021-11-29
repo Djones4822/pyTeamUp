@@ -94,6 +94,9 @@ none
 
 
 ## Change Log  
+**0.1.3b**
+* Added `attachment` to Event to event class to fix new undocumented change to teamup api.
+
 **0.1.3a**
 * Refactored utilities `format_date` to use better timestamp awareness. 
 
