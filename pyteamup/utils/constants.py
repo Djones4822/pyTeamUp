@@ -18,6 +18,8 @@ KEY_PERMISSIONS = (
     "no_access"
 )
 
+KEY_ROLES = ('mixed', *KEY_PERMISSIONS)
+
 KEY_SHARE_TYPES = (
     "all_subcalendars",
     "selected_subcalendars"
