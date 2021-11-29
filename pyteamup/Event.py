@@ -60,8 +60,9 @@ class Event:
 
         self.__api_key = self.parent_calendar.api_key
         self.__token_str = f'?_teamup_token={self.api_key}'
+        self.__headers = {'Content-type': 'application/json', 'Teamup-Token': self.__api_key}
         self.__url = self.__parent_calendar._base_url + EVENTS_BASE + f'/{self.event_id}'
-        self.__api_url = self.__url + self.__token_str
+        self.__api_url = self.__url
 
     def __str__(self):
         return self.event_id
@@ -346,8 +347,8 @@ class Event:
                     val = format_date(val)
                 final_update_dict[k] = val
             final_update_json = json.dumps(final_update_dict)
-            resp = requests.put(self.api_url, data=final_update_json, headers=POST_HEADERS)
-            check_status_code(resp.status_code)
+            resp = requests.put(self.__url, data=final_update_json, headers=self.__headers)
+            check_status_code(self.__url, resp.status_code, headers=self.__headers)
             resp_json = json.loads(resp.text)
             event_data = resp_json['event']
             undo_id = resp_json['undo_id']
@@ -416,9 +417,9 @@ class Event:
                 raise AttributeError('Recurring events require rredit paramter passed')
             redit_param = ''
 
-        url = self.api_url + f'&version={self.version}' + redit_param
-        resp = requests.delete(url)
-        check_status_code(resp.status_code)
+        url = self.__url + f'&version={self.version}' + redit_param
+        resp = requests.delete(url, headers=self.__headers)
+        check_status_code(url, resp.status_code, self.__headers)
         resp_json = json.loads(resp.text)
         self.__undo_id = resp_json['undo_id']
         self.__deleted = True
