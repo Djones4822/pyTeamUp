@@ -13,5 +13,5 @@ name = 'pyTeamUp'
 
 from pyteamup.Calendar import Calendar
 from pyteamup.Event import Event
-from pyteamup.Keys import Keys
+from pyteamup.Key import Key
 

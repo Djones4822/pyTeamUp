@@ -11,7 +11,7 @@ except:
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
 from pyteamup.Event import Event
-from pyteamup.Keys import Keys
+from pyteamup.Key import Key
 
 
 class Calendar:
@@ -253,7 +253,7 @@ class Calendar:
         if returnas == 'key':
             key_list = []
             for key in keys['keys']:
-                key_list.append(Keys(calendar=self, **key))
+                key_list.append(Key(calendar=self, **key))
             return_tuple = tuple(key_list)
         else:
             if store:
@@ -275,7 +275,7 @@ class Calendar:
         check_status_code(req.status_code)
         keys_json = json.loads(req.text)
         if returnas == 'key':
-            return Keys(calendar=self, **keys_json['key'])
+            return Key(calendar=self, **keys_json['key'])
 
         return self.keys_json['key']
 

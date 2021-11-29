@@ -9,7 +9,7 @@ from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
 from pyteamup.Calendar import Calendar
 
-class Keys:
+class Key:
     def __init__(self, calendar, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
                  require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None):
 

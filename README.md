@@ -21,7 +21,7 @@ python -m pip install pyTeamUp
  
 ## Example usage
 ```python
-from pyteamup import Calendar, Event, Keys
+from pyteamup import Calendar, Event, Key
 from datetime import datetime
 
 api_key = 'example api key'           # Get your own here: https://teamup.com/api-keys/request
