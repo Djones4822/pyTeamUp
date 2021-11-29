@@ -54,14 +54,13 @@ class Calendar:
         if not self.__valid_api:
             req = requests.get(self._check_access_url, headers=self.__headers)
             try:
-                check_status_code(req.status_code)
+                check_status_code(self._check_access_url, req.status_code, self.__headers)
                 self.__valid_api = True
-            except:
+            except HTTPError as e:
                 self.__valid_api = False
             return self.__valid_api
-
         else:
-            return None
+            return self.__valid_api
 
     @property
     def keys(self):
@@ -73,8 +72,9 @@ class Calendar:
     def configuration(self):
         if self.__configuration is None:
             print('Fetching configuration')
-            req = requests.get(self._base_url + CONFIGURATION_BASE, headers=self.__headers)
-            check_status_code(req.status_code)
+            url = self._base_url + CONFIGURATION_BASE
+            req = requests.get(url, headers=self.__headers)
+            check_status_code(url, req.status_code, headers=self.__headers)
             self.__configuration = json.loads(req.text)['configuration']
         return self.__configuration
 
@@ -83,7 +83,7 @@ class Calendar:
         if not self.__subcalendars:
             print('Fetching Subcalendars')
             req = requests.get(self._subcalendars_url, headers=self.__headers)
-            check_status_code(req.status_code)
+            check_status_code(self._subcalendars_url, req.status_code, self.__headers)
             self.__subcalendars = json.loads(req.text)['subcalendars']
         return self.__subcalendars
 
@@ -123,8 +123,9 @@ class Calendar:
             para_markdown = ''
             
         parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par + para_markdown
-        req = requests.get(self._event_collection_url + parameters, headers=self.__headers)
-        check_status_code(req.status_code)
+        url = self._event_collection_url + parameters
+        req = requests.get(url, headers=self.__headers)
+        check_status_code(url, req.status_code, self.__headers)
         self.events_json = json.loads(req.text)['events']
 
         if returnas == 'events':
@@ -136,9 +137,9 @@ class Calendar:
 
     def _create_event_from_json(self, payload):
         """ Lazy Creation of Event by passing a formatted payload"""
-        resp = requests.post(self._event_collection_url, data=payload, headers=POST_HEADERS)
+        resp = requests.post(self._event_collection_url, data=payload, headers=self.__headers)
         try:
-            check_status_code(resp.status_code)
+            check_status_code(self._event_collection_url, resp.status_code, self.__headers)
         except:
             print(payload)
             print(resp.text)
@@ -151,7 +152,7 @@ class Calendar:
 
         url = self._base_url + EVENTS_BASE + f'/{event_id}'
         resp = requests.get(url, headers=self.__headers)
-        check_status_code(resp.status_code)
+        check_status_code(url, resp.status_code, headers=self.__headers)
         event_dict = json.loads(resp.text)['event']
         if returnas == 'event':
             return Event(self, **event_dict)
@@ -177,7 +178,7 @@ class Calendar:
             raise ValueError('Returnas not recognized. Recognized values: event, series, dict')
         url = self._base_url + EVENTS_BASE + '&modifiedSince=' + str(modified_since)
         resp = requests.get(url, headers=self.__headers)
-        check_status_code(resp.status_code)
+        check_status_code(url, resp.status_code, headers=self.__headers)
         events_json = json.loads(resp.text)['events']
         timestamp = json.loads(resp.text)['timestamp']
 
@@ -248,7 +249,7 @@ class Calendar:
         if returnas not in ('key', 'dict'):
             raise ValueError('Return as must be one of: "key", "dict" ')
         req = requests.get(self._accesskey_url, headers=self.__headers)
-        check_status_code(req.status_code)
+        check_status_code(self._accesskey_url, req.status_code, headers=self.__headers)
         keys = json.loads(req.text)
         if returnas == 'key':
             key_list = []
@@ -271,8 +272,9 @@ class Calendar:
         if returnas not in ('key', 'dict'):
             raise ValueError('Return as must be one of: key, dict')
 
-        req = requests.get(self._accesskey_url + f'/{key_id}', headers=self.__headers)
-        check_status_code(req.status_code)
+        url = self._accesskey_url + f'/{key_id}'
+        req = requests.get(url, headers=self.__headers)
+        check_status_code(url, req.status_code, headers=self.__headers)
         keys_json = json.loads(req.text)
         if returnas == 'key':
             return Key(calendar=self, **keys_json['key'])
@@ -349,21 +351,22 @@ class Calendar:
             if case_sensitive == True:
                 if exact_match == True:
                     # Ex=T | Cs=T
-                    if key_name == key['name']:
+                    if key_name == key.name:
                         find.append(key)
                 else:
                     # Ex=F | Cs=T
-                    if key_name in key['name']:
+                    if key_name in key.name:
                         find.append(key)
             else:
                 if exact_match == True:
                     # Ex=T | Cs=F
-                    if key_name.lower() == key['name'].lower():
+                    if key_name.lower() == key.name.lower():
                         find.append(key)
                 else:
                     # Ex=T | Cs=F
-                    if key_name.lower() in key['name'].lower():
+                    if key_name.lower() in key.name.lower():
                         find.append(key)
+
         if len(find) == 0:
             raise Exception(f'Key {key_name} not found')
         if len(find) == 1:
@@ -384,11 +387,9 @@ class Calendar:
         # Deletes a key for the calendar
         # DELETE /{calendarKey}/keys/{keyId}
         if isinstance(key_id, int) == False:
-            raise Exception('Key id must be an integer')
+            raise TypeError('Key id must be an integer')
 
-        req = requests.delete(self.url + '/' + str(key_id), headers=self._headers)
-        if req.status_code == 204:
-            return True
-        else:
-            check_status_code(req.status_code)
-            return False
+        url = self._accesskey_url + f'/{str(key_id)}'
+        req = requests.delete(url, headers=self.__headers)
+        check_status_code(url, req.status_code, headers=self.__headers)
+        return True
