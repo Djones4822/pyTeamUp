@@ -43,6 +43,10 @@ class Calendar:
         return self.calendar_id
 
     @property
+    def headers(self):
+        return self.__headers
+
+    @property
     def api_key(self):
         return self.__api_key
 
