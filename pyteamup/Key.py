@@ -10,6 +10,9 @@ from pyteamup.utils.constants import *
 from pyteamup.Calendar import Calendar
 
 class Key:
+    permissions = KEY_PERMISSIONS
+    share_types = KEY_SHARE_TYPES
+
     def __init__(self, calendar, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
                  require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None):
 
@@ -54,31 +57,6 @@ class Key:
             'creation_dt': self.__creation_dt,
             'update_dt': self.__update_dt
         })
-
-    @property
-    def share_types(self):
-        # Share type options:
-        share_types = (
-            "all_subcalendars",
-            "selected_subcalendars"
-        )
-        return share_types
-    
-    @property
-    def permissions(self):
-        # Permission options:
-        permissions = (
-            "admin",
-            "modify",
-            "modify_from_same_link",
-            "add_only",
-            "read_only",
-            "modify_from_same_link_without_details",
-            "add_only_without_details",
-            "read_only_without_details",
-            "no_access"
-        )
-        return permissions
 
     def update_key(self, key_id, key_name=None, key_share_type=None, key_perms=None, key_active=None, key_admin=None, key_require_pass=None, key_pass=None, key_all_other=None):
         # Updates a key for the calendar
