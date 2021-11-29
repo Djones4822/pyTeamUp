@@ -66,7 +66,7 @@ class Calendar:
     @property
     def keys(self):
         if self.__keys is None:
-            self.get_keys()
+            self.get_keys(store=True)
         return self.__keys
 
     @property
@@ -243,7 +243,7 @@ class Calendar:
         else:
             return event_dict
 
-    def get_keys(self, store=True, returnas='key'):
+    def get_keys(self, store=False, returnas='key'):
         # GET /{calendarKey}/keys
         if returnas not in ('key', 'dict'):
             raise ValueError('Return as must be one of: "key", "dict" ')
