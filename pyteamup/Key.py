@@ -42,6 +42,54 @@ class Key:
         return f'Calendar Key {self.__id}'
 
     @property
+    def id(self):
+        return self.__id
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def key(self):
+        return self.__key
+
+    @property
+    def active(self):
+        return self.__active
+
+    @property
+    def admin(self):
+        return self.__admin
+
+    @property
+    def share_type(self):
+        return self.__share_type
+
+    @property
+    def role(self):
+        return self.__role
+
+    @property
+    def subcalendar_permissions(self):
+        return self.__subcalendar_permissions
+
+    @property
+    def require_password(self):
+        return self.__require_password
+
+    @property
+    def has_password(self):
+        return self.__has_password
+
+    @property
+    def creation_dt(self):
+        return self.__creation_dt
+
+    @property
+    def update_dt(self):
+        return self.__update_dt
+
+    @property
     def as_json(self):
         return json.dumps({
             'id': self.__id,
