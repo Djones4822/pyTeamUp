@@ -10,8 +10,8 @@ from pyteamup.utils.constants import *
 from pyteamup.Calendar import Calendar
 
 class Key:
-    permissions = KEY_PERMISSIONS
-    share_types = KEY_SHARE_TYPES
+    PERMISSIONS = KEY_PERMISSIONS
+    SHARE_TYPES = KEY_SHARE_TYPES
 
     def __init__(self, calendar, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
                  require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None):
