@@ -254,7 +254,6 @@ class Calendar:
             return (Key(calendar=self, **key) for key in keys['keys'])
         return tuple(keys['keys'])
 
-
     def get_key(self, key_id, returnas='key'):
         # Returns a key for the calendar
         # GET /{calendarKey}/keys/{keyId}
@@ -274,8 +273,8 @@ class Calendar:
                    key_pass="", key_all_other=None):
         # Creates a new key for the calendar
         # POST /{calendarKey}/keys
-        if isinstance(key_name, str) == False:
-            raise Exception('Key name must be a string')
+        if not isinstance(key_name, str):
+            raise TypeError('Key name must be a string')
 
         payload = {
             "name": key_name,
@@ -283,37 +282,38 @@ class Calendar:
             "admin": key_admin,
         }
 
-        if isinstance(key_require_pass, bool) == False:
-            raise Exception('Key require_pass must be a boolean')
-        if key_require_pass == True:
+        if not isinstance(key_require_pass, bool):
+            raise TypeError('Key require_pass must be a boolean')
+
+        if key_require_pass:
             # user wants to add a password
             payload['require_password'] = key_require_pass
-            if isinstance(key_pass, str) == False:
-                raise Exception('Key pass must be a string')
+            if not isinstance(key_pass, str):
+                raise TypeError('Key pass must be a string')
             if key_pass == "":
-                raise Exception('Key password cannot be empty')
+                raise ValueError('Key password cannot be empty')
             payload['password'] = key_pass
         else:
             # user does not want to add a password
             payload['require_password'] = key_require_pass
             payload['password'] = ""
 
-        if key_share_type not in self.share_types:
-            raise Exception(f'Invalid share type: {key_share_type}')
+        if key_share_type not in Key.SHARE_TYPES:
+            raise ValueError(f'Invalid share type: {key_share_type}')
         if key_share_type == 'all_subcalendars':
-            if key_perms not in self.permissions:
-                raise Exception(f'Invalid permission: {key_perms}')
+            if key_perms not in Key.PERMISSIONS:
+                raise ValueError(f'Invalid permission: {key_perms}')
             # All subcalendars have the same permissions
             payload['share_type'] = key_share_type
             payload['role'] = key_perms
         elif key_share_type == 'selected_subcalendars':
             if not isinstance(key_perms, dict):
-                raise Exception(f'Invalid key_perms: {key_perms}')
+                raise TypeError(f'Invalid key_perms: {key_perms}')
             payload['share_type'] = key_share_type
             payload['subcalendar_permissions'] = {}
             if key_all_other != None:
                 # Set all other subcalendars to specified permission
-                if key_all_other not in self.permissions:
+                if key_all_other not in Key.PERMISSIONS:
                     raise Exception(f'Invalid key_perms: {key_perms}')
                 subcalendar = Calendar(self.__calendar_id, self.__api_key).subcalendars
                 for subcal in subcalendar:
@@ -321,46 +321,43 @@ class Calendar:
                 payload['role'] = key_all_other
             for perm in key_perms:
                 # Overwrite all other perm with specified perm
-                if key_perms[perm] not in self.permissions:
+                if key_perms[perm] not in Key.PERMISSIONS:
                     raise Exception(f'Invalid key_perms: {key_perms}')
                 payload['subcalendar_permissions'][perm] = key_perms[perm]
 
         payloadjson = json.dumps(payload)
-        req = requests.post(self.url, headers=self._json_headers, data=payloadjson)
-        check_status_code(req.status_code)
-        self.keys_json = json.loads(req.text)
-        return self.keys_json['key']
+        req = requests.post(self._accesskey_url, headers=self.__headers, data=payloadjson)
+        check_status_code(self._accesskey_url, req.status_code, self.__headers)
+        keys_json = json.loads(req.text)
+        return Key(calendar=self, **keys_json['key'])
 
     def find_key_by_name(self, key_name, case_sensitive=False, exact_match=False):
-        # Finds a key by name
+        # Finds a key by name, returns a tuple of keys that match the given criteria
         # GET /{calendarKey}/keys
-        keys = self.keys
         find = []
-        for key in keys:
-            if case_sensitive == True:
-                if exact_match == True:
-                    # Ex=T | Cs=T
+        for key in self.keys:
+            if case_sensitive:
+                if exact_match:
+                    # Ex=T & Cs=T
                     if key_name == key.name:
                         find.append(key)
                 else:
-                    # Ex=F | Cs=T
+                    # Ex=F & Cs=T
                     if key_name in key.name:
                         find.append(key)
             else:
-                if exact_match == True:
-                    # Ex=T | Cs=F
+                if exact_match:
+                    # Ex=T & Cs=F
                     if key_name.lower() == key.name.lower():
                         find.append(key)
                 else:
-                    # Ex=T | Cs=F
+                    # Ex=T & Cs=F
                     if key_name.lower() in key.name.lower():
                         find.append(key)
 
         if len(find) == 0:
             raise Exception(f'Key {key_name} not found')
-        if len(find) == 1:
-            return find[0]
-        return find
+        return tuple(find)
 
     def find_key_by_perm(self):
         # Find keys with specific permissions
