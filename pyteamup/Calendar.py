@@ -11,6 +11,7 @@ except:
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
 from pyteamup.Event import Event
+from pyteamup.Keys import Keys
 
 
 class Calendar:
@@ -19,14 +20,17 @@ class Calendar:
         self.__api_key = api_key
         self.__cal_base = f'/{cal_id}'
         self.__token_str = f'?_teamup_token={self.api_key}'
+        self.__headers = {'Content-type': 'application/json', 'Teamup-Token': self.__api_key}
         self.__subcalendars = None
         self.__valid_api = None
         self.__configuration = None
+        self.__keys = None
 
         self._base_url = BASE_URL + self.__cal_base
-        self._event_collection_url = self._base_url + EVENTS_BASE + self.__token_str
-        self._subcalendars_url = self._base_url + SUBCALENDARS_BASE + self.__token_str
-        self._check_access_url = BASE_URL + CHECK_ACCESS_BASE + self.__token_str
+        self._event_collection_url = self._base_url + EVENTS_BASE
+        self._subcalendars_url = self._base_url + SUBCALENDARS_BASE
+        self._check_access_url = BASE_URL + CHECK_ACCESS_BASE
+        self._accesskey_url = self._base_url + KEYS_BASE
 
         self.events_json = None
 
@@ -48,7 +52,7 @@ class Calendar:
     def valid_api(self):
         """Makes a request to the calendar to see if the api is valid"""
         if not self.__valid_api:
-            req = requests.get(self._check_access_url)
+            req = requests.get(self._check_access_url, headers=self.__headers)
             try:
                 check_status_code(req.status_code)
                 self.__valid_api = True
@@ -60,10 +64,16 @@ class Calendar:
             return None
 
     @property
+    def keys(self):
+        if self.__keys is None:
+            self.get_keys()
+        return self.__keys
+
+    @property
     def configuration(self):
         if self.__configuration is None:
             print('Fetching configuration')
-            req = requests.get(self._base_url + CONFIGURATION_BASE + self.__token_str)
+            req = requests.get(self._base_url + CONFIGURATION_BASE, headers=self.__headers)
             check_status_code(req.status_code)
             self.__configuration = json.loads(req.text)['configuration']
         return self.__configuration
@@ -72,7 +82,7 @@ class Calendar:
     def subcalendars(self):
         if not self.__subcalendars:
             print('Fetching Subcalendars')
-            req = requests.get(self._subcalendars_url)
+            req = requests.get(self._subcalendars_url, headers=self.__headers)
             check_status_code(req.status_code)
             self.__subcalendars = json.loads(req.text)['subcalendars']
         return self.__subcalendars
@@ -92,7 +102,7 @@ class Calendar:
         :return: json of events
         """
         if returnas not in ('events', 'dataframe', 'dict'):
-            raise TypeError('Returnas not recognized. Recognized values: event, series, dict')
+            raise ValueError('Returnas not recognized. Recognized values: event, series, dict')
 
         if start_dt is None:
             start_dt = datetime.date.today() - datetime.timedelta(30)
@@ -113,7 +123,7 @@ class Calendar:
             para_markdown = ''
             
         parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par + para_markdown
-        req = requests.get(self._event_collection_url + parameters)
+        req = requests.get(self._event_collection_url + parameters, headers=self.__headers)
         check_status_code(req.status_code)
         self.events_json = json.loads(req.text)['events']
 
@@ -137,10 +147,10 @@ class Calendar:
 
     def get_event(self, event_id, returnas='event'):
         if returnas not in ('event', 'series', 'dict'):
-            raise TypeError('Returnas not recognized. Recognized values: event, series, dict')
+            raise ValueError('Returnas not recognized. Recognized values: event, series, dict')
 
-        url = self._base_url + EVENTS_BASE + f'/{event_id}' + self.__token_str
-        resp = requests.get(url)
+        url = self._base_url + EVENTS_BASE + f'/{event_id}'
+        resp = requests.get(url, headers=self.__headers)
         check_status_code(resp.status_code)
         event_dict = json.loads(resp.text)['event']
         if returnas == 'event':
@@ -164,9 +174,9 @@ class Calendar:
         :return: Tuple of event list and returned timestamp
         """
         if returnas not in ('event', 'series', 'dict'):
-            raise TypeError('Returnas not recognized. Recognized values: event, series, dict')
-        url = self._base_url + EVENTS_BASE + self.__token_str + '&modifiedSince=' + str(modified_since)
-        resp = requests.get(url)
+            raise ValueError('Returnas not recognized. Recognized values: event, series, dict')
+        url = self._base_url + EVENTS_BASE + '&modifiedSince=' + str(modified_since)
+        resp = requests.get(url, headers=self.__headers)
         check_status_code(resp.status_code)
         events_json = json.loads(resp.text)['events']
         timestamp = json.loads(resp.text)['timestamp']
@@ -233,3 +243,152 @@ class Calendar:
         else:
             return event_dict
 
+    def get_keys(self, store=True, returnas='key'):
+        # GET /{calendarKey}/keys
+        if returnas not in ('key', 'dict'):
+            raise ValueError('Return as must be one of: "key", "dict" ')
+        req = requests.get(self._accesskey_url, headers=self.__headers)
+        check_status_code(req.status_code)
+        keys = json.loads(req.text)
+        if returnas == 'key':
+            key_list = []
+            for key in keys['keys']:
+                key_list.append(Keys(calendar=self, **key))
+            return_tuple = tuple(key_list)
+        else:
+            if store:
+                raise ValueError('Store cannot equal True when returning keys as a tuple of dictionaries')
+            return_tuple = tuple(keys['keys'])
+
+        if store:
+            self.__keys = return_tuple
+
+        return return_tuple
+
+    def get_key(self, key_id, returnas='key'):
+        # Returns a key for the calendar
+        # GET /{calendarKey}/keys/{keyId}
+        if returnas not in ('key', 'dict'):
+            raise ValueError('Return as must be one of: key, dict')
+
+        req = requests.get(self._accesskey_url + f'/{key_id}', headers=self.__headers)
+        check_status_code(req.status_code)
+        keys_json = json.loads(req.text)
+        if returnas == 'key':
+            return Keys(calendar=self, **keys_json['key'])
+
+        return self.keys_json['key']
+
+    def create_key(self, key_name, key_share_type, key_perms, key_active=True, key_admin=False, key_require_pass=False,
+                   key_pass="", key_all_other=None):
+        # Creates a new key for the calendar
+        # POST /{calendarKey}/keys
+        if isinstance(key_name, str) == False:
+            raise Exception('Key name must be a string')
+
+        payload = {
+            "name": key_name,
+            "active": key_active,
+            "admin": key_admin,
+        }
+
+        if isinstance(key_require_pass, bool) == False:
+            raise Exception('Key require_pass must be a boolean')
+        if key_require_pass == True:
+            # user wants to add a password
+            payload['require_password'] = key_require_pass
+            if isinstance(key_pass, str) == False:
+                raise Exception('Key pass must be a string')
+            if key_pass == "":
+                raise Exception('Key password cannot be empty')
+            payload['password'] = key_pass
+        else:
+            # user does not want to add a password
+            payload['require_password'] = key_require_pass
+            payload['password'] = ""
+
+        if key_share_type not in self.share_types:
+            raise Exception(f'Invalid share type: {key_share_type}')
+        if key_share_type == 'all_subcalendars':
+            if key_perms not in self.permissions:
+                raise Exception(f'Invalid permission: {key_perms}')
+            # All subcalendars have the same permissions
+            payload['share_type'] = key_share_type
+            payload['role'] = key_perms
+        elif key_share_type == 'selected_subcalendars':
+            if not isinstance(key_perms, dict):
+                raise Exception(f'Invalid key_perms: {key_perms}')
+            payload['share_type'] = key_share_type
+            payload['subcalendar_permissions'] = {}
+            if key_all_other != None:
+                # Set all other subcalendars to specified permission
+                if key_all_other not in self.permissions:
+                    raise Exception(f'Invalid key_perms: {key_perms}')
+                subcalendar = Calendar(self.__calendar_id, self.__api_key).subcalendars
+                for subcal in subcalendar:
+                    payload['subcalendar_permissions'][str(subcal['id'])] = key_all_other
+                payload['role'] = key_all_other
+            for perm in key_perms:
+                # Overwrite all other perm with specified perm
+                if key_perms[perm] not in self.permissions:
+                    raise Exception(f'Invalid key_perms: {key_perms}')
+                payload['subcalendar_permissions'][perm] = key_perms[perm]
+
+        payloadjson = json.dumps(payload)
+        req = requests.post(self.url, headers=self._json_headers, data=payloadjson)
+        check_status_code(req.status_code)
+        self.keys_json = json.loads(req.text)
+        return self.keys_json['key']
+
+    def find_key_by_name(self, key_name, case_sensitive=False, exact_match=False):
+        # Finds a key by name
+        # GET /{calendarKey}/keys
+        keys = self.keys
+        find = []
+        for key in keys:
+            if case_sensitive == True:
+                if exact_match == True:
+                    # Ex=T | Cs=T
+                    if key_name == key['name']:
+                        find.append(key)
+                else:
+                    # Ex=F | Cs=T
+                    if key_name in key['name']:
+                        find.append(key)
+            else:
+                if exact_match == True:
+                    # Ex=T | Cs=F
+                    if key_name.lower() == key['name'].lower():
+                        find.append(key)
+                else:
+                    # Ex=T | Cs=F
+                    if key_name.lower() in key['name'].lower():
+                        find.append(key)
+        if len(find) == 0:
+            raise Exception(f'Key {key_name} not found')
+        if len(find) == 1:
+            return find[0]
+        return find
+
+    def find_key_by_perm(self):
+        # Find keys with specific permissions
+        # GET /{calendarKey}/keys
+        raise NotImplementedError
+
+    def find_key_by_date(self):
+        # Find keys created in time frame.
+        # GET /{calendarKey}/keys
+        raise NotImplementedError
+
+    def delete_key(self, key_id):
+        # Deletes a key for the calendar
+        # DELETE /{calendarKey}/keys/{keyId}
+        if isinstance(key_id, int) == False:
+            raise Exception('Key id must be an integer')
+
+        req = requests.delete(self.url + '/' + str(key_id), headers=self._headers)
+        if req.status_code == 204:
+            return True
+        else:
+            check_status_code(req.status_code)
+            return False
