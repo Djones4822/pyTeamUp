@@ -15,12 +15,14 @@ from pyteamup.Key import Key
 
 
 class Calendar:
-    def __init__(self, cal_id, api_key):
+    def __init__(self, cal_id, api_key, password):
         self.__calendar_id = cal_id
         self.__api_key = api_key
         self.__cal_base = f'/{cal_id}'
         self.__token_str = f'?_teamup_token={self.api_key}'
         self.__headers = {'Content-type': 'application/json', 'Teamup-Token': self.__api_key}
+        if password:
+            self.__headers['Teamup-Password'] = password
         self.__subcalendars = None
         self.__valid_api = None
         self.__configuration = None
