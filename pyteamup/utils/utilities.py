@@ -1,4 +1,5 @@
 import datetime
+from urllib.error import HTTPError
 
 RESPONSES = {
     400: '400: Bad Request -- Invalid Request',
@@ -16,9 +17,9 @@ RESPONSES = {
 }
 
 
-def check_status_code(status_code):
+def check_status_code(url, status_code, headers=None, fp=None):
     if status_code >= 400:
-        raise Exception(RESPONSES.get(status_code))
+        raise HTTPError(url, status_code, RESPONSES.get(status_code), hdrs=headers, fp=fp)
     return RESPONSES.get(status_code, f'Unknown but Ok: {status_code}')
 
 
