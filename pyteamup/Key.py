@@ -1,9 +1,5 @@
-from warnings import warn
 import requests
 import json
-from datetime import datetime
-from collections import OrderedDict
-from dateutil.parser import parse as to_datetime
 
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
@@ -18,7 +14,7 @@ class Key:
                  require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None):
 
         if not isinstance(calendar, Calendar):
-            raise TypeError('Must pass a Calendar object to construct a Key')
+            raise TypeError('Must pass a valid Calendar object for Key')
 
         if not calendar.valid_api:
             raise ValueError('Calendar object does not have a valid API key')
@@ -52,6 +48,12 @@ class Key:
     def name(self):
         return self.__name
 
+    @name.setter
+    def name(self, new_name):
+        if not isinstance(new_name, str):
+            raise TypeError(f'Key Names must be string type, not {type(new_name)}')
+        self.update(name=new_name)
+
     @property
     def key(self):
         return self.__key
@@ -60,25 +62,53 @@ class Key:
     def active(self):
         return self.__active
 
+    @active.setter
+    def active(self, new_active):
+        if not isinstance(new_active, bool):
+            raise TypeError(f'Key Names must be boolean type, not {type(new_active)}')
+        self.update(active=new_active)
+
     @property
     def admin(self):
         return self.__admin
+
+    @admin.setter
+    def admin(self, new_admin):
+        if not isinstance(new_admin, bool):
+            raise TypeError(f'Key Names must be boolean type, not {type(new_admin)}')
+        self.update(admin=new_admin)
 
     @property
     def share_type(self):
         return self.__share_type
 
+    @share_type.setter
+    def share_type(self, x):
+        raise Exception('Cannot set via property setter, use Key.update() method to change share_type')
+
     @property
     def role(self):
         return self.__role
+
+    @role.setter
+    def role(self, x):
+        raise Exception('Cannot set via property setter, use Key.update() method to change role')
 
     @property
     def subcalendar_permissions(self):
         return self.__subcalendar_permissions
 
+    @subcalendar_permissions.setter
+    def subcalendar_permissions(self, x):
+        raise Exception('Cannot set via property setter, use Key.update() method to change subcalendar_permissions')
+
     @property
     def require_password(self):
         return self.__require_password
+
+    @require_password.setter
+    def require_password(self, x):
+        raise Exception('Cannot set via property setter, use Key.update() method to change require_password')
 
     @property
     def has_password(self):
