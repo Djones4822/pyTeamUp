@@ -266,24 +266,46 @@ class Calendar:
         keys_json = json.loads(req.text)
         if returnas == 'key':
             return Key(calendar=self, **keys_json['key'])
-
-        return self.keys_json['key']
+        return keys_json['key']
 
     def create_key(self, key_name, key_share_type, key_perms, key_active=True, key_admin=False, key_require_pass=False,
                    key_pass="", key_all_other=None):
-        # Creates a new key for the calendar
-        # POST /{calendarKey}/keys
+        """
+        Method for creating keys for individual sub-calendars.
+
+        Credit to Frederick Schaller IV (@LogicallyUnfit on Github) for main contribution.
+
+        Parameters
+        ----------
+        key_name - string; name to give key
+        key_share_type - string; the share type value, one of: all_subcalendars, selected_subcalendars
+        key_perms - string OR dictionary; if key_share_type is all_subcalendars then pass string, if key_share_type is
+                    selected_subcalendars then pass a dictionary with the subcalendar ID as the key, and the string
+                    permission value (from Key.PERMISSIONS)
+        key_active - Boolean
+        key_admin - Boolean
+        key_require_pass - Boolean
+        key_pass - String; only provide if key_require_pass==True
+        key_all_other - String; only pas if key_share_type=="selected_subcalendars", any subcalendars omitted from the
+                        key_perms dict will be assigned this permission value. Recommended to set to 'no_access'
+
+        Returns
+        -------
+        `Key` object containing newly created Key
+
+        """
         if not isinstance(key_name, str):
             raise TypeError('Key name must be a string')
+        if not isinstance(key_require_pass, bool):
+            raise TypeError('Key require_pass must be a boolean')
+        if key_share_type not in Key.SHARE_TYPES:
+            raise ValueError(f'Invalid share type: {key_share_type}')
 
         payload = {
             "name": key_name,
             "active": key_active,
             "admin": key_admin,
         }
-
-        if not isinstance(key_require_pass, bool):
-            raise TypeError('Key require_pass must be a boolean')
 
         if key_require_pass:
             # user wants to add a password
@@ -298,25 +320,24 @@ class Calendar:
             payload['require_password'] = key_require_pass
             payload['password'] = ""
 
-        if key_share_type not in Key.SHARE_TYPES:
-            raise ValueError(f'Invalid share type: {key_share_type}')
         if key_share_type == 'all_subcalendars':
             if key_perms not in Key.PERMISSIONS:
                 raise ValueError(f'Invalid permission: {key_perms}')
             # All subcalendars have the same permissions
             payload['share_type'] = key_share_type
             payload['role'] = key_perms
+
         elif key_share_type == 'selected_subcalendars':
             if not isinstance(key_perms, dict):
                 raise TypeError(f'Invalid key_perms: {key_perms}')
             payload['share_type'] = key_share_type
             payload['subcalendar_permissions'] = {}
-            if key_all_other != None:
+            if key_all_other is not None:
                 # Set all other subcalendars to specified permission
                 if key_all_other not in Key.PERMISSIONS:
-                    raise Exception(f'Invalid key_perms: {key_perms}')
-                subcalendar = Calendar(self.__calendar_id, self.__api_key).subcalendars
-                for subcal in subcalendar:
+                    raise Exception(f'Invalid key_all_other value: {key_all_other}')
+                subcalendars = Calendar(self.__calendar_id, self.__api_key).subcalendars
+                for subcal in subcalendars:
                     payload['subcalendar_permissions'][str(subcal['id'])] = key_all_other
                 payload['role'] = key_all_other
             for perm in key_perms:
