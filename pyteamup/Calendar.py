@@ -64,8 +64,7 @@ class Calendar:
 
     @property
     def keys(self):
-        if self.__keys is None:
-            self.get_keys(store=True)
+        self.__keys = self.get_key_collection()
         return self.__keys
 
     @property
@@ -244,7 +243,7 @@ class Calendar:
         else:
             return event_dict
 
-    def get_keys(self, store=False, returnas='key'):
+    def get_key_collection(self, returnas='key'):
         # GET /{calendarKey}/keys
         if returnas not in ('key', 'dict'):
             raise ValueError('Return as must be one of: "key", "dict" ')
@@ -252,19 +251,9 @@ class Calendar:
         check_status_code(self._accesskey_url, req.status_code, headers=self.__headers)
         keys = json.loads(req.text)
         if returnas == 'key':
-            key_list = []
-            for key in keys['keys']:
-                key_list.append(Key(calendar=self, **key))
-            return_tuple = tuple(key_list)
-        else:
-            if store:
-                raise ValueError('Store cannot equal True when returning keys as a tuple of dictionaries')
-            return_tuple = tuple(keys['keys'])
+            return (Key(calendar=self, **key) for key in keys['keys'])
+        return tuple(keys['keys'])
 
-        if store:
-            self.__keys = return_tuple
-
-        return return_tuple
 
     def get_key(self, key_id, returnas='key'):
         # Returns a key for the calendar
