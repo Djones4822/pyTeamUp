@@ -12,6 +12,7 @@ from pyteamup.Calendar import Calendar
 class Key:
     PERMISSIONS = KEY_PERMISSIONS
     SHARE_TYPES = KEY_SHARE_TYPES
+    ROLES = KEY_ROLES
 
     def __init__(self, calendar, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
                  require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None):
@@ -33,13 +34,15 @@ class Key:
         self.__subcalendar_permissions = subcalendar_permissions
         self.__require_password = require_password
         self.__has_password = has_password
-        self.__email = email
-        self.__user_id = user_id
+        self.__email = email  # always null? No interface specified in API Documentation as of 11/29/2021
+        self.__user_id = user_id  # always null? No interface specified in API Documentation as of 11/29/2021
         self.__creation_dt = creation_dt
         self.__update_dt = update_dt
 
+        self.__url = self.__calendar._accesskey_url + f'/{self.__id}'
+
     def __str__(self):
-        return f'Calendar Key {self.__id}'
+        return f'{str(self.__id)}'
 
     @property
     def id(self):
@@ -90,8 +93,8 @@ class Key:
         return self.__update_dt
 
     @property
-    def as_json(self):
-        return json.dumps({
+    def as_dict(self):
+        return {
             'id': self.__id,
             'name': self.__name,
             'key': self.__key,
@@ -104,86 +107,104 @@ class Key:
             'has_password': self.__has_password,
             'creation_dt': self.__creation_dt,
             'update_dt': self.__update_dt
-        })
+        }
 
-    def update_key(self, key_id, key_name=None, key_share_type=None, key_perms=None, key_active=None, key_admin=None, key_require_pass=None, key_pass=None, key_all_other=None):
-        # Updates a key for the calendar
-        # PUT /{calendarKey}/keys/{keyId}
-        if key_name == None and key_share_type == None and key_perms == None and key_active == None and key_admin == None and key_require_pass == None and key_pass == None and key_all_other == None:
-            raise Exception('No updates specified')
-        if isinstance(key_id, int) == False:
-            raise Exception('Key id must be an integer')
+    def update(self, **kwargs):
+        """
+        Method for updating the attributes of a key. Makes minimal assumptions about the Key and permissions, relying
+        on the Server to provide feedback.
 
-        # Load existing key        
-        payload = self.get_key(key_id)
-        
-        # Update elements
-        if key_name != None:
-            if isinstance(key_name, str) == False:
-                raise Exception('Key name must be a string')
-            payload['name'] = key_name
-        if key_share_type != None:
-            if key_share_type not in self.share_types:
-                raise Exception(f'Invalid share type: {key_share_type}')
-            if key_share_type == 'all_subcalendars':
-                if key_perms not in self.permissions:
-                    raise Exception(f'Invalid permission: {key_perms}')
-                # All subcalendars have the same permissions
-                payload['share_type'] = key_share_type
-                payload['role'] = key_perms
-            elif key_share_type == 'selected_subcalendars':
-                if not isinstance(key_perms, dict):
-                    raise Exception(f'Invalid key_perms: {key_perms}')
-                payload['share_type'] = key_share_type
-                payload['subcalendar_permissions'] = {}
-                if key_all_other != None:
-                    # Set all other subcalendars to specified permission
-                    if key_all_other not in self.permissions:
-                        raise Exception(f'Invalid key_perms: {key_perms}')
-                    subcalendar = Calendar(self.__calendar_id, self.__api_key).subcalendars
-                    for subcal in subcalendar:
-                        payload['subcalendar_permissions'][str(subcal['id'])] = key_all_other
-                    payload['role'] = key_all_other
-                for perm in key_perms:
-                    # Overwrite all other perm with specified perm
-                    if key_perms[perm] not in self.permissions:
-                        raise Exception(f'Invalid key_perms: {key_perms}')
-                    payload['subcalendar_permissions'][perm] = key_perms[perm]
-        if key_active != None:
-            if isinstance(key_active, bool) == False:
-                raise Exception('Key active must be a boolean')
-            payload['active'] = key_active
-        
-        if key_admin != None:
-            if isinstance(key_admin, bool) == False:
-                raise Exception('Key admin must be a boolean')
-            payload['admin'] = key_admin
-        
-        if key_require_pass != None:
-            if key_pass == None:
-                raise Exception('Key require_password requires a password')
-            if isinstance(key_require_pass, bool) == False:
-                raise Exception('Key require_pass must be a boolean')
-            if key_require_pass == True:
-                if isinstance(key_pass, str) == False:
-                    raise Exception('Key pass must be a string')
-                payload['require_password'] = key_require_pass
-                payload['password'] = key_pass
-            else:
-                payload['require_password'] = key_require_pass
-                payload['password'] = ""
+        For example, if you set a permission for role, and also provide permissions for individual subcalendars,
+        or some other mis-configuration, the method will pass the misconfiguration to the Server for evaluation and
+        response.
+
+        Can pass one value or many. No Batch mode.
+
+        Will raise ValueError if an invalid key is provided in kwargs.
+
+        Credit to Frederick Schaller IV (@LogicallyUnfit on Github) for initial contribution.
+
+        Parameters
+        ----------
+        kwargs - can be any of the fields specified in the API documentation as writable. See documentation for
+                 more information. Fields that can be updated are:
+                    name - string;
+                    key_share_type - string; will raise ValueError if invalid value provided
+                    role - string; will raise ValueError if invalid value provided
+                    active - boolean
+                    admin - boolean
+                    require_password - boolean
+                    password - string, required if setting require_password=True
+                    subcalendar_permissions - empty list or dictionary of subcalendar ID's and the new permission
+
+        Returns
+        -------
+        None, will update the values of the Key Object in place.
+
+        """
+        if not kwargs:
+            raise ValueError('Must pass property to update')
+
+        # Load existing key data
+        payload = self.as_dict
+
+        for key, value in kwargs.items():
+            if key not in payload.keys():
+                raise ValueError(f'Unknown property {key}')
+
+            if key in ('id', 'key', 'creation_dt', 'update_dt'):
+                raise ValueError(f'Cannot update {key}')
+
+            if key == 'name':
+                if not isinstance(value, str):
+                    raise TypeError(f'Key name must be a string not {type(value)}')
+            elif key == 'key_share_type':
+                if value not in Key.SHARE_TYPES:
+                    raise ValueError(f'Invalid share type: {value}')
+            elif key == 'role':
+                if value not in Key.ROLES:
+                    raise ValueError(f'Invalid role value: {value}')
+            elif key == 'active':
+                if not isinstance(value, bool):
+                    raise TypeError('active parameter must be a boolean')
+            elif key == 'admin':
+                if not isinstance(value, bool) :
+                    raise Exception('admin parameter must be a boolean')
+            elif key == 'require_password':
+                if not isinstance(value, bool):
+                    raise Exception('require_pass parameter must be a boolean')
+                if value:
+                    if 'password' not in kwargs:
+                        raise KeyError('password parameter must be present if adding password requirement')
+                else:
+                    payload['password'] = ""
+            elif key == 'password':
+                if not isinstance(value, str):
+                    raise Exception(f'Key pass must be a string not {type(value)}')
+
+            elif key == 'subcalendar_permissions':
+                if value != [] and not isinstance(value, dict):
+                    raise TypeError('subcalendar_permissions must be one of: empty list or dictionary')
+                if isinstance(value, dict):
+                    for subcal_id, perm in value.items():
+                        if perm not in Key.PERMISSIONS:
+                            raise ValueError(f'Invalid permission: {perm}')
+                        payload['subcalendar_permissions'][subcal_id] = perm
+                    continue  # goto next key in kwargs
+            payload[key] = value
+
         # Remove Read only bits that we can't modify
         payload.pop('update_dt', None)
         payload.pop('creation_dt', None)
-        payload.pop('type', None)
         payload.pop('has_password', None)
 
         payloadjson = json.dumps(payload)
 
-        req = requests.put(self.url + '/' + str(key_id), headers=self._json_headers, data=payloadjson)
-        check_status_code(req.status_code)
-        self.keys_json = json.loads(req.text)
-        return self.keys_json['key']
+        req = requests.put(self.__url, headers=self.__calendar.headers, data=payloadjson)
+        check_status_code(self.__url, req.status_code, self.__calendar.headers)
+        return_data = json.loads(req.text)
+        for k,v in return_data.items():
+            self.__setattr__(f'_Key__{k}', v)
 
     def get_key_events(self):
         # Returns events for a key
