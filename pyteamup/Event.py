@@ -14,7 +14,7 @@ class Event:
                rrule=None, ristart_dt=None, rsstart_dt=None, tz=None, version=None, readonly=None, duration=None,
                creation_dt=None, update_dt=None, delete_dt=None ,signup_enabled=None, signup_deadline=None,
                signup_visibility=None, signup_limit=None, comments_enabled=None, comments_visibility=None, custom=None,
-               surpress_warning=False, undo_id=None):
+               surpress_warning=False, undo_id=None, attachments=None):
 
         self.surpress_warning = surpress_warning
         self.__parent_calendar = parent_calendar
@@ -53,6 +53,7 @@ class Event:
         self.__aux = None
         self.__history = None
         self.__deleted = bool(delete_dt)
+        self.__attachments = attachments
 
         self.__batch = False
         self.__batch_update_records = OrderedDict()
@@ -320,6 +321,10 @@ class Event:
             'location': self.location,
             'remote_id': self.remote_id
         }
+
+    @property
+    def attachments(self):
+        return self.__attachments
 
     def execute_update(self, update_dict):
         """Executes an update. if Batch Mode is enabled then it will store it in the queue until batch execute is called
