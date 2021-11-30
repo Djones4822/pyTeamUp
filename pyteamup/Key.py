@@ -4,7 +4,7 @@ from warnings import warn
 
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
-from pyteamup.Calendar import Calendar
+#from pyteamup.Calendar import Calendar
 
 class Key:
     PERMISSIONS = KEY_PERMISSIONS
@@ -14,8 +14,8 @@ class Key:
     def __init__(self, calendar, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
                  require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None, **kwargs):
 
-        if not isinstance(calendar, Calendar):
-            raise TypeError('Must pass a valid Calendar object for Key')
+        #if not isinstance(calendar, Calendar):
+        #    raise TypeError('Must pass a valid Calendar object for Key')
 
         if not calendar.valid_api:
             raise ValueError('Calendar object does not have a valid API key')
@@ -220,6 +220,8 @@ class Key:
                 if value != [] and not isinstance(value, dict):
                     raise TypeError('subcalendar_permissions must be one of: empty list or dictionary')
                 if isinstance(value, dict):
+                    if not payload['subcalendar_permissions']:
+                        payload['subcalendar_permissions'] = {}
                     for subcal_id, perm in value.items():
                         if perm not in Key.PERMISSIONS:
                             raise ValueError(f'Invalid permission: {perm}')
@@ -237,8 +239,9 @@ class Key:
         req = requests.put(self.__url, headers=self.__calendar.headers, data=payloadjson)
         check_status_code(self.__url, req.status_code, self.__calendar.headers)
         return_data = json.loads(req.text)
-        for k,v in return_data.items():
-            self.__setattr__(f'_Key__{k}', v)
+        for k,v in return_data['key'].items():
+            super(Key, self).__setattr__(f'_Key__{k}', v)
+            #self.__setattr__(f'_Key__{k}', v)
 
     def get_key_events(self):
         # Returns events for a key
