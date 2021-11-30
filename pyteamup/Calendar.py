@@ -15,7 +15,7 @@ from pyteamup.Key import Key
 
 
 class Calendar:
-    def __init__(self, cal_id, api_key, password):
+    def __init__(self, cal_id, api_key, password=None):
         self.__calendar_id = cal_id
         self.__api_key = api_key
         self.__cal_base = f'/{cal_id}'
@@ -383,7 +383,7 @@ class Calendar:
                         find.append(key)
 
         if len(find) == 0:
-            raise Exception(f'Key {key_name} not found')
+            return ()
         return tuple(find)
 
     def find_key_by_perm(self):
@@ -396,11 +396,15 @@ class Calendar:
         # GET /{calendarKey}/keys
         raise NotImplementedError
 
-    def delete_key(self, key_id):
+    def delete_key(self, key):
         # Deletes a key for the calendar
         # DELETE /{calendarKey}/keys/{keyId}
-        if isinstance(key_id, int) == False:
-            raise TypeError('Key id must be an integer')
+        if isinstance(key, Key):
+            key_id = key.id
+        elif isinstance(key, int):
+            key_id = key
+        else:
+            raise TypeError('Key id must be an integer or Key object')
 
         url = self._accesskey_url + f'/{str(key_id)}'
         req = requests.delete(url, headers=self.__headers)
