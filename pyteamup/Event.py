@@ -14,7 +14,7 @@ class Event:
                rrule=None, ristart_dt=None, rsstart_dt=None, tz=None, version=None, readonly=None, duration=None,
                creation_dt=None, update_dt=None, delete_dt=None ,signup_enabled=None, signup_deadline=None,
                signup_visibility=None, signup_limit=None, comments_enabled=None, comments_visibility=None, custom=None,
-               surpress_warning=False, undo_id=None, attachments=None):
+               surpress_warning=False, undo_id=None, attachments=None, **kwargs):
 
         self.surpress_warning = surpress_warning
         self.__parent_calendar = parent_calendar
@@ -57,6 +57,9 @@ class Event:
 
         self.__batch = False
         self.__batch_update_records = OrderedDict()
+
+        for k in kwargs:
+            warn(f'Unhandled Event parameter: {k}')
 
         self.__api_key = self.parent_calendar.api_key
         self.__token_str = f'?_teamup_token={self.api_key}'
