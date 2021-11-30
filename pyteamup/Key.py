@@ -1,5 +1,6 @@
 import requests
 import json
+from warnings import warn
 
 from pyteamup.utils.utilities import *
 from pyteamup.utils.constants import *
@@ -11,7 +12,7 @@ class Key:
     ROLES = KEY_ROLES
 
     def __init__(self, calendar, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
-                 require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None):
+                 require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None, **kwargs):
 
         if not isinstance(calendar, Calendar):
             raise TypeError('Must pass a valid Calendar object for Key')
@@ -34,6 +35,9 @@ class Key:
         self.__user_id = user_id  # always null? No interface specified in API Documentation as of 11/29/2021
         self.__creation_dt = creation_dt
         self.__update_dt = update_dt
+
+        for k in kwargs:
+            warn(f'Unknown keyword {k}')
 
         self.__url = self.__calendar._accesskey_url + f'/{self.__id}'
 
