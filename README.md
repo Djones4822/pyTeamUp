@@ -164,7 +164,7 @@ none
 Special Thanks to Frederick Schaller IV (@LogicallyUnfit on Github) for providing basis that this update was built off. Much of his code was re-used or refactored into this version release.
 
 *Calendar Object*
-* Added `key` property which returns the current Keys as a tuple (note: this always fetches the latest key data from the API, it is never stored)
+* Added `keys` property which returns the current Keys as a tuple (note: this always fetches the latest key data from the API, it is never stored)
 * Added `get_key()` method and `get_key_collection()` method 
 * Added `delete_key()` method
 * Added `create_key()` method
@@ -173,7 +173,6 @@ Special Thanks to Frederick Schaller IV (@LogicallyUnfit on Github) for providin
 * Added Markdown support to `get_event_collection`
 * Rewrote check_status_code to accept necessary arguments `url` and `headers` to use with `HTTPError` (further refactoring likely here)
 * Refactored all Exceptions to be more descriptive allowing for better handling
-
 
 *Key Object*
 * Implemented Python Object for holding the `Key` data model as provided by the TeamUp API
@@ -184,7 +183,6 @@ Special Thanks to Frederick Schaller IV (@LogicallyUnfit on Github) for providin
 
 **0.1.4a**  
 * Added basic support for `Event.attachment` property to `Event` class to fix new undocumented change to teamup api. (credit: LogicallyUnfit)
-
 
 **0.1.3a**
 * Refactored utilities `format_date` to use better timestamp awareness. 
