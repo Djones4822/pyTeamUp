@@ -18,6 +18,5 @@ setuptools.setup(
                  "Operating System :: OS Independent"],
     install_requires=['requests',
                       'datetime',
-                      'python-dateutil',
-                      'urllib']
+                      'python-dateutil']
 )
