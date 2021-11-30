@@ -18,9 +18,9 @@ python -m pip install pyTeamUp
  * Pythonic access to TeamUp Calendars, Events, and Access Keys.
  * Methods for gathering subcalendars and event collections. 
  * Interface for getting, creating and deleting events within `Calendar` object
- * Interface for getting, creating and deleting keys using the `Calendar` object methods
+ * Interface for getting, creating and deleting keys using the `Calendar` object methods (currently untested)
  * `Event` Object features simple interface for updating event properties 
- * `Key` object allows update key properties using the `Key` object using the `update()` method (currently untested)
+ * `Key` object allows update key properties using the `update()` method (currently untested)
  * Batch update events to reduce api calls when updating multiple event properties
  * If pandas is present, Calendar can return events as Series objects and event collections as DataFrame objects
 
