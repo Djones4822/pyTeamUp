@@ -1,12 +1,21 @@
+"""
+Event Object for PyTeamUp package
+
+Author: David Jones
+Creation Date: 11/27/2017
+Last Updated 12/3/2021
+"""
 from warnings import warn
-import requests
-import json
 from datetime import datetime
 from collections import OrderedDict
 from dateutil.parser import parse as to_datetime
+import logging
 
 from pyteamup.utils.func import *
 from pyteamup.utils.const import *
+
+logger = logging.getLogger(__name__)
+
 
 class Event:
     def __init__(self, parent_calendar, id, remote_id=None, series_id=None,subcalendar_ids=None, subcalendar_id=None,
@@ -16,6 +25,8 @@ class Event:
                signup_visibility=None, signup_limit=None, comments_enabled=None, comments_visibility=None, custom=None,
                surpress_warning=False, undo_id=None, attachments=None, **kwargs):
 
+        if surpress_warning:
+            warn('surpress_warning is deprecated and has no effect. Please set the log level to adjust log message visibility')
         self.surpress_warning = surpress_warning
         self.__parent_calendar = parent_calendar
         self.__id = id
@@ -59,7 +70,7 @@ class Event:
         self.__batch_update_records = OrderedDict()
 
         for k in kwargs:
-            warn(f'Unhandled Event parameter: {k}')
+            logger.warning(f'Unhandled Event parameter: {k}')
 
         self.__api_key = self.parent_calendar.api_key
         self.__token_str = f'?_teamup_token={self.api_key}'
@@ -92,8 +103,7 @@ class Event:
             update_dict = {'remote_id': new_id}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New Remote Id is identical to current ID. No changes made')
+            logger.info('New Remote Id is identical to current ID. No changes made')
 
     @property
     def start_dt(self):
@@ -107,8 +117,7 @@ class Event:
             update_dict = {'start_dt': new_dt}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New Start Date is identical to current. No changes made')
+            logger.info('New Start Date is identical to current. No changes made')
 
     @property
     def end_dt(self):
@@ -122,8 +131,7 @@ class Event:
             update_dict = {'end_dt': new_dt}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New End Date is identical to current. No changes made')
+            logger.info('New End Date is identical to current. No changes made')
 
     @property
     def duration(self):
@@ -142,8 +150,7 @@ class Event:
             update_dict = {'all_day': value}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New all_day value is identical to current. No changes made')
+            logger.info('New all_day value is identical to current. No changes made')
 
     @property
     def title(self):
@@ -155,8 +162,7 @@ class Event:
             update_dict = {'title': new_title}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New title is identical to current. No changes made')
+            logger.info('New title is identical to current. No changes made')
 
     @property
     def who(self):
@@ -168,8 +174,7 @@ class Event:
             update_dict = {'who': who}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New location is identical to current. No changes made')
+            logger.info('New location is identical to current. No changes made')
 
     @property
     def location(self):
@@ -181,8 +186,7 @@ class Event:
             update_dict = {'location': location}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New location is identical to current. No changes made')
+            logger.info('New location is identical to current. No changes made')
     @property
     def notes(self):
         return self.__notes
@@ -193,8 +197,7 @@ class Event:
             update_dict = {'notes': description}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New description is identical to current. No changes made')
+            logger.info('New description is identical to current. No changes made')
 
     @property
     def subcalendar_ids(self):
@@ -211,8 +214,7 @@ class Event:
             update_dict = {'subcalendar_ids': ids}
             self.execute_update(update_dict)
         else:
-            if not self.surpress_warning:
-                warn('New description is identical to current. No changes made')
+            logger.info('New description is identical to current. No changes made')
 
     @property
     def rrule(self):
@@ -311,7 +313,7 @@ class Event:
         return self.__history
 
     @property
-    def _update_dict(self):
+    def _base_update_dict(self):
         return {
             "id": self.event_id,
             "subcalendar_ids": self.subcalendar_ids,
@@ -337,22 +339,19 @@ class Event:
                             valid fields. Note that custom fields are not supported by the api currently.
         """
         if self.batch:
-            if not self.surpress_warning:
-                warn('Batch Mode Enabled, Request not sent until Event.batch_submit() called')
+            logger.warning('Batch Mode Enabled, Request not sent until Event.batch_submit() called')
             for k, v in update_dict.items():
                 self.__batch_update_records[k] = v
             return 'Batch Updated'
         else:
-            final_update_dict = self._update_dict
+            final_update_dict = self._base_update_dict
             for k in update_dict:
                 val = update_dict[k]
                 if isinstance(val, datetime.datetime):
                     val = format_date(val)
                 final_update_dict[k] = val
-            final_update_json = json.dumps(final_update_dict)
-            resp = requests.put(self.__url, data=final_update_json, headers=self.__headers)
-            check_status_code(self.__url, resp.status_code, headers=self.__headers)
-            resp_json = json.loads(resp.text)
+            resp = make_request('put', self.__url, headers=self.__headers, payload=json.dumps(final_update_dict))
+            resp_json = resp.json()
             event_data = resp_json['event']
             undo_id = resp_json['undo_id']
             self.__init__(self.__parent_calendar, undo_id=undo_id, **event_data)
@@ -362,30 +361,29 @@ class Event:
         batch_execute() is called"""
         if not self.batch:
             self.__batch = True
-            print('Batch Mode Enabled')
+            print('NOTICE: Batch Mode Enabled')
         else:
             if not self.surpress_warning:
-                warn('Batch mode already enabled')
+                logger.warning('Batch mode already enabled')
 
     def disable_batch_update(self, clear=False, force=False):
         """Interface for Batch Update Mode to turn the mode off.
         :param: clear: Boolean, used if calling disable manually and wish to discard"""
+        notice = ''
         if self.batch:
             if self.__batch_update_records:
                 if clear:
                     to_disp_len = len(self.__batch_update_records)
-                    if not self.surpress_warning:
-                        warn(f'Disposing of {to_disp_len} batch updates in queue')
+                    logger.warning(f'Discaring {to_disp_len} updates in batch queue')
                     self.__batch_update_records = OrderedDict()
                 else:
                     if not force:
                         raise Exception('Non-Empty Queue, cannot turn off batch mode. Run batch_commit() or pass clear=True or pass force=True')
-                    print('Batch Cache not cleared')
+                    notice = ' NOTICE: batch cache NOT cleared'
             self.__batch = False
-            print('Batch Update Disabled')
+            print(f'Batch Update Disabled{notice}')
         else:
-            if not self.surpress_warning:
-                warn('Batch mode already enabled')
+            raise Exception('Batch Mode is not enabled')
 
     def batch_commit(self):
         """
@@ -400,8 +398,7 @@ class Event:
                 self.execute_update(self.__batch_update_records)
                 self.__batch_update_records = OrderedDict()
             else:
-                if not self.surpress_warning:
-                    warn('No Updates in Queue, no changes made, batch mode still enabled.')
+                logger.warning('No Updates in Queue, no changes made, batch mode still enabled.')
         else:
             raise Exception('Batch Mode is not enabled.')
 
@@ -421,13 +418,11 @@ class Event:
             redit_param = ''
 
         url = self.__url + f'&version={self.version}' + redit_param
-        resp = requests.delete(url, headers=self.__headers)
-        check_status_code(url, resp.status_code, self.__headers)
-        resp_json = json.loads(resp.text)
+        resp = make_request('delete', url, headers=self.__headers)
+        resp_json = resp.json()
         self.__undo_id = resp_json['undo_id']
         self.__deleted = True
-        if not self.surpress_warning:
-            warn('Event Deleted but delete_dt not set until event is refreshed from server. Use Calendar to get the event again')
+        logger.warning('Event Deleted but delete_dt not set until event is refreshed from server. Use Calendar to get the event again')
 
 
 
