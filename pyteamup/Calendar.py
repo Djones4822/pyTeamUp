@@ -127,7 +127,7 @@ class Calendar:
 
         :param start_dt: if set as None then set as today minus 30 days
         :param end_dt:  if left as None then set as today plus 180 days
-        :param subcal_id: optional str or list-like if a different calendar should be queried
+        :param subcal_id: optional str or list-like if a different parent should be queried
         :return: json of events
         """
         if returnas not in ('events', 'dataframe', 'dict'):
@@ -224,7 +224,7 @@ class Calendar:
 
         Undo_id not included with return unless returnas='event' in which case it is included with the returned Event Object
 
-        :param subcalendar_id: <str, int, or list-like> Required - the ID of the subcalendar within the calendar the event should be created in.
+        :param subcalendar_id: <str, int, or list-like> Required - the ID of the subcalendar within the parent the event should be created in.
         :param title: <str> Title of the event, must be
         :param start_dt: <datetime> Start Datetime
         :param end_dt: <datetime> End Datetime
@@ -280,11 +280,11 @@ class Calendar:
         check_status_code(self._accesskey_url, req.status_code, headers=self.__headers)
         keys = json.loads(req.text)
         if returnas == 'key':
-            return (Key(calendar=self, **key) for key in keys['keys'])
+            return (Key(parent=self, **key) for key in keys['keys'])
         return tuple(keys['keys'])
 
     def get_key(self, key_id, returnas='key'):
-        # Returns a key for the calendar
+        # Returns a key for the parent
         # GET /{calendarKey}/keys/{keyId}
         if returnas not in ('key', 'dict'):
             raise ValueError('Return as must be one of: key, dict')
@@ -294,7 +294,7 @@ class Calendar:
         check_status_code(url, req.status_code, headers=self.__headers)
         keys_json = json.loads(req.text)
         if returnas == 'key':
-            return Key(calendar=self, **keys_json['key'])
+            return Key(parent=self, **keys_json['key'])
         return keys_json['key']
 
     def create_key(self, key_name, key_share_type, key_perms, key_active=True, key_admin=False, key_require_pass=False,
@@ -379,7 +379,7 @@ class Calendar:
         req = requests.post(self._accesskey_url, headers=self.__headers, data=payloadjson)
         check_status_code(self._accesskey_url, req.status_code, self.__headers)
         keys_json = json.loads(req.text)
-        return Key(calendar=self, **keys_json['key'])
+        return Key(parent=self, **keys_json['key'])
 
     def find_key_by_name(self, key_name, case_sensitive=False, exact_match=False):
         # Finds a key by name, returns a tuple of keys that match the given criteria
@@ -420,7 +420,7 @@ class Calendar:
         raise NotImplementedError
 
     def delete_key(self, key):
-        # Deletes a key for the calendar
+        # Deletes a key for the parent
         # DELETE /{calendarKey}/keys/{keyId}
         if isinstance(key, Key):
             key_id = key.id
