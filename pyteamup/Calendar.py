@@ -157,7 +157,7 @@ class Calendar:
             para_markdown = ''
             
         parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par + para_markdown
-        url = self._event_collection_url + parameters
+        url = f'{self._event_collection_url}?{parameters}'
         req = make_request('get', url, self.__headers)
         self.events_json = json.loads(req.text)['events']
 

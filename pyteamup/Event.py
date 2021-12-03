@@ -446,7 +446,7 @@ class Event:
                 raise AttributeError('Recurring events require rredit paramter passed')
             redit_param = ''
 
-        url = self.__url + f'&version={self.version}' + redit_param
+        url = f'{self.__url}?version={self.version}{redit_param}'
         resp = make_request('delete', url, headers=self.__headers)
         resp_json = resp.json()
         self.__undo_id = resp_json['undo_id']
