@@ -11,16 +11,16 @@ class Key:
     SHARE_TYPES = KEY_SHARE_TYPES
     ROLES = KEY_ROLES
 
-    def __init__(self, calendar, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
+    def __init__(self, parent, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
                  require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None, **kwargs):
 
-        #if not isinstance(calendar, Calendar):
+        #if not isinstance(parent, Calendar):
         #    raise TypeError('Must pass a valid Calendar object for Key')
 
-        if not calendar.valid_api:
+        if not parent.valid_api:
             raise ValueError('Calendar object does not have a valid API key')
 
-        self.__calendar = calendar
+        self.__parent = parent
         self.__id = id
         self.__name = name
         self.__key = key
@@ -39,7 +39,7 @@ class Key:
         for k in kwargs:
             warn(f'Unknown keyword {k}')
 
-        self.__url = self.__calendar._accesskey_url + f'/{self.__id}'
+        self.__url = self.__parent._accesskey_url + f'/{self.__id}'
 
     def __str__(self):
         return f'{str(self.__id)}'
@@ -236,8 +236,8 @@ class Key:
 
         payloadjson = json.dumps(payload)
 
-        req = requests.put(self.__url, headers=self.__calendar.headers, data=payloadjson)
-        check_status_code(self.__url, req.status_code, self.__calendar.headers)
+        req = requests.put(self.__url, headers=self.__parent.headers, data=payloadjson)
+        check_status_code(self.__url, req.status_code, self.__parent.headers)
         return_data = json.loads(req.text)
         for k,v in return_data['key'].items():
             super(Key, self).__setattr__(f'_Key__{k}', v)
