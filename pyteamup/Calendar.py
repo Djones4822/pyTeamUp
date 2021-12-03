@@ -1,5 +1,14 @@
-import requests
-import json
+"""
+Calendar Object for PyTeamUp package
+
+Author: David Jones
+Creation Date: 11/27/2017
+Last Updated 12/3/2021
+Contributor(s): Frederick Schaller IV (@LogicallyUnfit on Github)
+
+"""
+from warnings import warn
+import logging
 import sys
 from dateutil.parser import parse as to_datetime
 try:
@@ -12,12 +21,13 @@ from pyteamup.utils.const import *
 from pyteamup.Event import Event
 from pyteamup.Key import Key
 
+logger = logging.getLogger(__name__)
 
 class Calendar:
     def __init__(self, cal_id, api_key, password=None):
         """
-        Primary Controller of an individual TeamUp Calendar. Uses the API to make REST requests using the provided
-        calendar ID, API Key, and optional Password (if present).
+        Primary Controller of an individual TeamUp Calendar. Uses the Teamup API to make REST requests using the provided
+        calendar ID, API Key, and optional Password.
 
         Provides access to a calendar's events, access keys, and some aspects of individual subcalendars.
 
@@ -80,16 +90,13 @@ class Calendar:
 
         """
         if not self.__valid_api:
-            req = requests.get(self._check_access_url, headers=self.__headers)
             try:
-                check_status_code(self._check_access_url, req.status_code, self.__headers)
+                make_request('get', self._check_access_url, headers=self.__headers)
                 self.__valid_api = True
             except (TeamUpError, HTTPError) as e:
                 logger.exception(e)
                 self.__valid_api = False
-            return self.__valid_api
-        else:
-            return self.__valid_api
+        return self.__valid_api
 
     @property
     def keys(self):
@@ -102,8 +109,7 @@ class Calendar:
         if self.__configuration is None:
             print('Fetching configuration')
             url = self._base_url + CONFIGURATION_BASE
-            req = requests.get(url, headers=self.__headers)
-            check_status_code(req.status_code, response=req, url=url, headers=self.__headers)
+            req = make_request('get', url, self.__headers)
             self.__configuration = json.loads(req.text)['configuration']
         return self.__configuration
 
@@ -111,8 +117,7 @@ class Calendar:
     def subcalendars(self):
         if not self.__subcalendars:
             print('Fetching Subcalendars')
-            req = requests.get(self._subcalendars_url, headers=self.__headers)
-            check_status_code(req.status_code, response=req, url=self._subcalendars_url, headers=self.__headers)
+            req = make_request('get', self._subcalendars_url, self.__headers)
             self.__subcalendars = json.loads(req.text)['subcalendars']
         return self.__subcalendars
 
@@ -153,8 +158,7 @@ class Calendar:
             
         parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par + para_markdown
         url = self._event_collection_url + parameters
-        req = requests.get(url, headers=self.__headers)
-        check_status_code(req.status_code, response=req, url=url, headers=self.__headers)
+        req = make_request('get', url, self.__headers)
         self.events_json = json.loads(req.text)['events']
 
         if returnas == 'events':
@@ -165,23 +169,32 @@ class Calendar:
             return self.events_json
 
     def _create_event_from_json(self, payload):
-        """ Lazy Creation of Event by passing a formatted payload"""
-        resp = requests.post(self._event_collection_url, data=payload, headers=self.__headers)
-        try:
-            check_status_code(resp.status_code, response=resp, url=self._event_collection_url, headers=self.__headers)
-        except Exception as e:
-            logger.error(f'Exception encountered with payload: {payload}')
-            raise
-        return resp.text
+        """ DEPRECATED
+        Lazy Creation of Event by passing a json encoded string payload"""
+        warn('Calendar._create_event_from_json is deprecated, use Calendar.new_event to construct a new event.',
+             DeprecationWarning)
+        return make_request('post', self._event_collection_url, self.__headers, payload)
 
     def get_event(self, event_id, returnas='event'):
+        """
+        Primary access method to fetch a single event. Event can be returned as Event Object, Python Dictionary, or
+        Pandas Series
+        Parameters
+        ----------
+        event_id - integer; ID of a valid event contained within a calendar.
+        returnas - string; one of: 'event' | 'dict' | 'series'
+
+        Returns
+        -------
+        object containing event data in format requested, default `Event` object
+        """
         if returnas not in ('event', 'series', 'dict'):
             raise ValueError('Returnas not recognized. Recognized values: event, series, dict')
 
         url = self._base_url + EVENTS_BASE + f'/{event_id}'
-        resp = requests.get(url, headers=self.__headers)
-        check_status_code(resp.status_code, response=resp, url=url, headers=self.__headers)
-        event_dict = json.loads(resp.text)['event']
+        resp = make_request('get', url, self.__headers)
+
+        event_dict = resp.json()['event']
         if returnas == 'event':
             return Event(self, **event_dict)
         elif returnas == 'series' and 'pandas' in sys.modules:
@@ -197,20 +210,28 @@ class Calendar:
 
     def get_changed_events(self, modified_since, returnas='event'):
         """
-        Get changed events since given unix time
-        :param modified_since: <int> Unix timestamp, must be less than 30 days old
-        :param returnas: <str> `event` `series` `dict` are valid options
-        :return: Tuple of event list and returned timestamp
+        Method for accessing the API endpoint provided here: https://apidocs.teamup.com/?shell#get-events-changed
+
+        Get changed events since given unix time, returns a tuple containing the iterable of events in the format
+        specified in `returnas` AND the timestamp interpreted by the TeamUp server
+
+        event_id - integer; ID of a valid event contained within a calendar.
+        returnas - string; one of: 'event' | 'dict' | 'dataframe'
+
+        Returns
+        -------
+        tuple containing
+        collection of object containing event data in format requested, default a list of `Event` objects.
         """
-        if returnas not in ('event', 'series', 'dict'):
+        if returnas not in ('event', 'df', 'dict'):
             raise ValueError('Returnas not recognized. Recognized values: event, series, dict')
         url = self._base_url + EVENTS_BASE + '&modifiedSince=' + str(modified_since)
-        resp = requests.get(url, headers=self.__headers)
-        check_status_code(resp.status_code, response=resp, url=url, headers=self.__headers)
-        events_json = json.loads(resp.text)['events']
-        timestamp = json.loads(resp.text)['timestamp']
+        resp = make_request('get', url, self.__headers)
+        resp_json = resp.json()
+        events_json = resp_json['events']
+        timestamp = resp_json['timestamp']
 
-        if returnas == 'events':
+        if returnas == 'event':
             return [Event(self, **event_dict) for event_dict in events_json], timestamp
         elif returnas == 'dataframe' and 'pandas' in sys.modules:
             return pd.DataFrame.from_records(events_json), timestamp
@@ -224,17 +245,22 @@ class Calendar:
 
         Undo_id not included with return unless returnas='event' in which case it is included with the returned Event Object
 
-        :param subcalendar_id: <str, int, or list-like> Required - the ID of the subcalendar within the parent the event should be created in.
-        :param title: <str> Title of the event, must be
-        :param start_dt: <datetime> Start Datetime
-        :param end_dt: <datetime> End Datetime
-        :param all_day: <Bool> Allday or Not
-        :param notes: <str> HTML or Markdown formatted string detailing the Description
-        :param location: <str> Location of the event
-        :param who: <str>
-        :param remote_id: <str> Remote ID of the event, used to link the TeamUp event record to its source information
-        :param returnas: <str> `event` `series` `dict` are valid options
-        :return:
+        Parameters
+        ----------
+        title - string (Required); Title of the event, must be
+        start_dt - datetime (Required); Start Datetime of the event
+        end_dt - datetime (Required); End Datetime
+        subcalendar_ids: str, int, or list-like (Required); The ID of the subcalendar within the parent the event should be created in.
+        all_day: bool; Event is all day or not
+        notes - string; HTML or Markdown formatted string detailing the Description
+        location - string; Location of the event
+        who - string;
+        remote_id - string; Remote ID of the event, used to link the TeamUp event record to its source information
+        returnas - string; One of: 'event' | 'dict' | 'series' DEFAULT: 'event'
+
+        Returns
+        -------
+        object containing created event data returned by the server in the format specified in `returnas` argument
         """
         if returnas not in ('event','dict','series'):
             raise ValueError(f'Unrecognized returnas paramter: {returnas}')
@@ -260,8 +286,8 @@ class Calendar:
                 'who': who
                 }
 
-        resp_text = self._create_event_from_json(json.dumps(dict))
-        resp_dict = json.loads(resp_text)
+        resp = make_request('post', self._event_collection_url, self.__headers, json.dumps(dict))
+        resp_dict = resp.json()
         event_dict = resp_dict['event']
         undo_id = resp_dict['undo_id']
 
@@ -273,26 +299,42 @@ class Calendar:
             return event_dict
 
     def get_key_collection(self, returnas='key'):
-        # GET /{calendarKey}/keys
+        """
+        Get the current key collection available to the calendar.
+        Parameters
+        ----------
+        returnas - string; DEFAULT: 'key'; one of: 'key' | 'dict'
+
+        Returns
+        -------
+        a tuple of returned keys in the format specified in `returnas` argument
+        """
         if returnas not in ('key', 'dict'):
             raise ValueError('Return as must be one of: "key", "dict" ')
-        req = requests.get(self._accesskey_url, headers=self.__headers)
-        check_status_code(self._accesskey_url, req.status_code, headers=self.__headers)
-        keys = json.loads(req.text)
+        resp = make_request('get', self._accesskey_url, headers=self.__headers)
+        keys = resp.json()['keys']
         if returnas == 'key':
-            return (Key(parent=self, **key) for key in keys['keys'])
-        return tuple(keys['keys'])
+            return (Key(parent=self, **key) for key in keys)
+        return tuple(keys)
 
     def get_key(self, key_id, returnas='key'):
-        # Returns a key for the parent
-        # GET /{calendarKey}/keys/{keyId}
+        """
+        Get the current key collection available to the calendar.
+        Parameters
+        ----------
+        key_id - string (Required); the id of the key requested contained within the Calendar.
+        returnas - string; DEFAULT: 'key'; one of: 'key' | 'dict'
+
+        Returns
+        -------
+        a the data of the returned key in the format specified in `returnas` argument
+        """
         if returnas not in ('key', 'dict'):
             raise ValueError('Return as must be one of: key, dict')
 
         url = self._accesskey_url + f'/{key_id}'
-        req = requests.get(url, headers=self.__headers)
-        check_status_code(url, req.status_code, headers=self.__headers)
-        keys_json = json.loads(req.text)
+        resp = make_request('get', url, headers=self.__headers)
+        keys_json = resp.json()
         if returnas == 'key':
             return Key(parent=self, **keys_json['key'])
         return keys_json['key']
@@ -376,10 +418,9 @@ class Calendar:
                 payload['subcalendar_permissions'][perm] = key_perms[perm]
 
         payloadjson = json.dumps(payload)
-        req = requests.post(self._accesskey_url, headers=self.__headers, data=payloadjson)
-        check_status_code(self._accesskey_url, req.status_code, self.__headers)
-        keys_json = json.loads(req.text)
-        return Key(parent=self, **keys_json['key'])
+        resp = make_request('post', self._accesskey_url, headers=self.__headers, payload=payloadjson)
+        key_data = resp.json()['key']
+        return Key(parent=self, **key_data)
 
     def find_key_by_name(self, key_name, case_sensitive=False, exact_match=False):
         # Finds a key by name, returns a tuple of keys that match the given criteria
@@ -430,6 +471,5 @@ class Calendar:
             raise TypeError('Key id must be an integer or Key object')
 
         url = self._accesskey_url + f'/{str(key_id)}'
-        req = requests.delete(url, headers=self.__headers)
-        check_status_code(url, req.status_code, headers=self.__headers)
+        make_request('delete', url, headers=self.__headers)
         return True
