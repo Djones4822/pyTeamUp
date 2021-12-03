@@ -1,9 +1,28 @@
+"""
+Key object
+
+Author: David Jones
+Date: 11/28/2021
+Credits:
+
+Key Object for TeamUp Operations.
+
+Keys are used as access points into a set of calendars, allow to configuration of permissions to individual subcalendars
+or the calendar as a whole.
+
+Keys cannot be constructed without a calendar calendar, the calendar calendar must have authority over the key to make updates.
+
+It is intended that a key is constructed entirely of the response body of the server, not by user input. As such, all validation
+of acceptibility is deferred to the teamup servers, relying on the server response to guide flow.
+
+I believe the server behavior structures it's logic by first looking at the share_type value. If share_type is '
+"""
 import requests
 import json
 from warnings import warn
 
-from pyteamup.utils.utilities import *
-from pyteamup.utils.constants import *
+from pyteamup.utils.func import *
+from pyteamup.utils.const import *
 #from pyteamup.Calendar import Calendar
 
 class Key:
@@ -18,7 +37,7 @@ class Key:
         #    raise TypeError('Must pass a valid Calendar object for Key')
 
         if not calendar.valid_api:
-            raise ValueError('Calendar object does not have a valid API key')
+            raise ValueError('Constructing Calendar object does not have a valid API key')
 
         self.__calendar = calendar
         self.__id = id
@@ -169,7 +188,8 @@ class Key:
                     admin - boolean
                     require_password - boolean
                     password - string, required if setting require_password=True
-                    subcalendar_permissions - empty list or dictionary of subcalendar ID's and the new permission
+                    subcalendar_permissions - empty iterable or dictionary of subcalendar ID's and the new permission,
+                                              be aware of unknown consequences of mixing role and subcalendar_permissions
 
         Returns
         -------
@@ -209,9 +229,9 @@ class Key:
                     raise Exception('require_pass parameter must be a boolean')
                 if value:
                     if 'password' not in kwargs:
-                        raise KeyError('password parameter must be present if adding password requirement')
+                        raise KeyError('password must be provided if adding password requirement')
                 else:
-                    payload['password'] = ""
+                    payload['password'] = ""  # Set password to nothing if the require_password value is False
             elif key == 'password':
                 if not isinstance(value, str):
                     raise Exception(f'Key pass must be a string not {type(value)}')
@@ -220,13 +240,16 @@ class Key:
                 if value != [] and not isinstance(value, dict):
                     raise TypeError('subcalendar_permissions must be one of: empty list or dictionary')
                 if isinstance(value, dict):
+                    # Iterate over the dict and validate the permission, then set it as the value to the subcal ID within the dictionary
+                    # this is the only one where the value is not directly written to the payload (hence the continue)
                     if not payload['subcalendar_permissions']:
                         payload['subcalendar_permissions'] = {}
                     for subcal_id, perm in value.items():
                         if perm not in Key.PERMISSIONS:
                             raise ValueError(f'Invalid permission: {perm}')
                         payload['subcalendar_permissions'][subcal_id] = perm
-                    continue  # goto next key in kwargs
+                    continue  # we already added the values, don't add it like
+
             payload[key] = value
 
         # Remove Read only bits that we can't modify
@@ -240,8 +263,7 @@ class Key:
         check_status_code(self.__url, req.status_code, self.__calendar.headers)
         return_data = json.loads(req.text)
         for k,v in return_data['key'].items():
-            super(Key, self).__setattr__(f'_Key__{k}', v)
-            #self.__setattr__(f'_Key__{k}', v)
+            super(Key, self).__setattr__(f'_Key__{k}', v)    # Update the object attributes with data from server
 
     def get_key_events(self):
         # Returns events for a key

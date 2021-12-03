@@ -1,6 +1,5 @@
 import requests
 import json
-import datetime
 import sys
 from dateutil.parser import parse as to_datetime
 try:
@@ -8,14 +7,26 @@ try:
 except:
     pass
 
-from pyteamup.utils.utilities import *
-from pyteamup.utils.constants import *
+from pyteamup.utils.func import *
+from pyteamup.utils.const import *
 from pyteamup.Event import Event
 from pyteamup.Key import Key
 
 
 class Calendar:
     def __init__(self, cal_id, api_key, password=None):
+        """
+        Primary Controller of an individual TeamUp Calendar. Uses the API to make REST requests using the provided
+        calendar ID, API Key, and optional Password (if present).
+
+        Provides access to a calendar's events, access keys, and some aspects of individual subcalendars.
+
+        Parameters
+        ----------
+        cal_id - REQUIRED - string;
+        api_key - REQUIRED - string;
+        password - Optional - string;
+        """
         self.__calendar_id = cal_id
         self.__api_key = api_key
         self.__cal_base = f'/{cal_id}'
@@ -44,25 +55,37 @@ class Calendar:
 
     @property
     def headers(self):
+        """read-only view of the headers used in API requests"""
         return self.__headers
 
     @property
     def api_key(self):
+        """read-only view of the API key used in API requests"""
         return self.__api_key
 
     @property
     def calendar_id(self):
+        """read-only view of the calendar key (id) used in API requests"""
         return self.__calendar_id
 
     @property
     def valid_api(self):
-        """Makes a request to the calendar to see if the api is valid"""
+        """
+        Helper property that returns True if the access check request returns 200
+
+        Makes a request to the calendar to see if the api is valid. If error, writes the log message as ERROR
+
+        Returns
+        -------
+
+        """
         if not self.__valid_api:
             req = requests.get(self._check_access_url, headers=self.__headers)
             try:
                 check_status_code(self._check_access_url, req.status_code, self.__headers)
                 self.__valid_api = True
-            except HTTPError as e:
+            except (TeamUpError, HTTPError) as e:
+                logger.exception(e)
                 self.__valid_api = False
             return self.__valid_api
         else:
@@ -70,6 +93,7 @@ class Calendar:
 
     @property
     def keys(self):
+        """Property that returns the current full key collection for a calendar. """
         self.__keys = self.get_key_collection()
         return self.__keys
 
@@ -79,7 +103,7 @@ class Calendar:
             print('Fetching configuration')
             url = self._base_url + CONFIGURATION_BASE
             req = requests.get(url, headers=self.__headers)
-            check_status_code(url, req.status_code, headers=self.__headers)
+            check_status_code(req.status_code, response=req, url=url, headers=self.__headers)
             self.__configuration = json.loads(req.text)['configuration']
         return self.__configuration
 
@@ -88,7 +112,7 @@ class Calendar:
         if not self.__subcalendars:
             print('Fetching Subcalendars')
             req = requests.get(self._subcalendars_url, headers=self.__headers)
-            check_status_code(self._subcalendars_url, req.status_code, self.__headers)
+            check_status_code(req.status_code, response=req, url=self._subcalendars_url, headers=self.__headers)
             self.__subcalendars = json.loads(req.text)['subcalendars']
         return self.__subcalendars
 
@@ -130,7 +154,7 @@ class Calendar:
         parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par + para_markdown
         url = self._event_collection_url + parameters
         req = requests.get(url, headers=self.__headers)
-        check_status_code(url, req.status_code, self.__headers)
+        check_status_code(req.status_code, response=req, url=url, headers=self.__headers)
         self.events_json = json.loads(req.text)['events']
 
         if returnas == 'events':
@@ -144,10 +168,9 @@ class Calendar:
         """ Lazy Creation of Event by passing a formatted payload"""
         resp = requests.post(self._event_collection_url, data=payload, headers=self.__headers)
         try:
-            check_status_code(self._event_collection_url, resp.status_code, self.__headers)
-        except:
-            print(payload)
-            print(resp.text)
+            check_status_code(resp.status_code, response=resp, url=self._event_collection_url, headers=self.__headers)
+        except Exception as e:
+            logger.error(f'Exception encountered with payload: {payload}')
             raise
         return resp.text
 
@@ -157,7 +180,7 @@ class Calendar:
 
         url = self._base_url + EVENTS_BASE + f'/{event_id}'
         resp = requests.get(url, headers=self.__headers)
-        check_status_code(url, resp.status_code, headers=self.__headers)
+        check_status_code(resp.status_code, response=resp, url=url, headers=self.__headers)
         event_dict = json.loads(resp.text)['event']
         if returnas == 'event':
             return Event(self, **event_dict)
@@ -183,7 +206,7 @@ class Calendar:
             raise ValueError('Returnas not recognized. Recognized values: event, series, dict')
         url = self._base_url + EVENTS_BASE + '&modifiedSince=' + str(modified_since)
         resp = requests.get(url, headers=self.__headers)
-        check_status_code(url, resp.status_code, headers=self.__headers)
+        check_status_code(resp.status_code, response=resp, url=url, headers=self.__headers)
         events_json = json.loads(resp.text)['events']
         timestamp = json.loads(resp.text)['timestamp']
 

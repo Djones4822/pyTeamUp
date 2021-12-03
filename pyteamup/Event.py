@@ -5,8 +5,8 @@ from datetime import datetime
 from collections import OrderedDict
 from dateutil.parser import parse as to_datetime
 
-from pyteamup.utils.utilities import *
-from pyteamup.utils.constants import *
+from pyteamup.utils.func import *
+from pyteamup.utils.const import *
 
 class Event:
     def __init__(self, parent_calendar, id, remote_id=None, series_id=None,subcalendar_ids=None, subcalendar_id=None,

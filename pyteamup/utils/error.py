@@ -1,0 +1,2 @@
+class TeamUpError(Exception):
+    pass
