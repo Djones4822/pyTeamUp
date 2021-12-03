@@ -329,6 +329,35 @@ class Event:
         }
 
     @property
+    def as_dict(self):
+        dict1 = self._base_update_dict
+        dict2 = {
+            'notes': self.__notes,
+            'rrule': self.__rrule,
+            'ristart_dt': self.__ristart_dt,
+            'rsstart_dt': self.__rsstart_dt,
+            'tz': self.__tz,
+            'readonly': self.__readonly,
+            'duration': self.__duration,
+            'signup_enabled': self.__signup_enabled,
+            'signup_deadline': self.__signup_deadline,
+            'signup_visibility': self.__signup_visibility,
+            'signup_limit': self.__signup_limit,
+            'comments_enabled': self.__comments_enabled,
+            'comments_visibility': self.__comments_visibility,
+            'custom': self.__custom,
+            'creation_dt': self.__creation_dt,
+            'update_dt': self.__update_dt,
+            'delete_dt': self.__delete_dt,
+            'undo_id': self.__undo_id,
+            'aux': self.__aux,
+            'history': self.__history,
+            'deleted': self.__deleted,
+            'attachments': self.__attachments,
+        }
+        return dict(**dict1, **dict2)
+
+    @property
     def attachments(self):
         return self.__attachments
 
