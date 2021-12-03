@@ -2,8 +2,9 @@
 Key object
 
 Author: David Jones
-Date: 11/28/2021
-Credits:
+Creation Date: 11/28/2021
+Last Updated: 12/3/2021
+Contributor(s): Frederick Schaller IV (@LogicallyUnfit on Github)
 
 Key Object for TeamUp Operations.
 
@@ -17,13 +18,11 @@ of acceptibility is deferred to the teamup servers, relying on the server respon
 
 I believe the server behavior structures it's logic by first looking at the share_type value. If share_type is '
 """
-import requests
-import json
-from warnings import warn
-
 from pyteamup.utils.func import *
 from pyteamup.utils.const import *
 #from pyteamup.Calendar import Calendar
+
+logger = logging.getLogger(__name__)
 
 class Key:
     PERMISSIONS = KEY_PERMISSIONS
@@ -31,7 +30,7 @@ class Key:
     ROLES = KEY_ROLES
 
     def __init__(self, parent, id=None, name=None, key=None, active=None, admin=None, share_type=None, role=None, subcalendar_permissions=None,
-                 require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None, **kwargs):
+                 require_password=None, has_password=None, email=None, user_id=None, creation_dt=None, update_dt=None, type=None, **kwargs):
 
         #if not isinstance(parent, Calendar):
         #    raise TypeError('Must pass a valid Calendar object for Key')
@@ -54,9 +53,10 @@ class Key:
         self.__user_id = user_id  # always null? No interface specified in API Documentation as of 11/29/2021
         self.__creation_dt = creation_dt
         self.__update_dt = update_dt
+        self.__type = type
 
         for k in kwargs:
-            warn(f'Unknown keyword {k}')
+            logger.warning(f'Unknown keyword {k}')
 
         self.__url = self.__parent._accesskey_url + f'/{self.__id}'
 
@@ -259,9 +259,8 @@ class Key:
 
         payloadjson = json.dumps(payload)
 
-        req = requests.put(self.__url, headers=self.__parent.headers, data=payloadjson)
-        check_status_code(self.__url, req.status_code, self.__parent.headers)
-        return_data = json.loads(req.text)
+        resp = make_request('put', self.__url, headers=self.__parent.headers, payload=payloadjson)
+        return_data = resp.json()
         for k,v in return_data['key'].items():
             super(Key, self).__setattr__(f'_Key__{k}', v)    # Update the object attributes with data from server
 
