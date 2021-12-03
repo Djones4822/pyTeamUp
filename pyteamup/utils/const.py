@@ -1,3 +1,10 @@
+"""
+Constants for PyTeamUp package
+
+Author: David Jones
+Creation Date: 11/27/2017
+Last Updated 12/3/2021
+"""
 BASE_URL = f'https://api.teamup.com'
 CHECK_ACCESS_BASE = '/check-access'
 EVENTS_BASE = '/events'
