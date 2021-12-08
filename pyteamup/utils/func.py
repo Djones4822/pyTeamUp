@@ -9,7 +9,6 @@ import datetime
 from pyteamup.utils.const import RESPONSES
 from pyteamup.utils.error import TeamUpError
 from urllib.error import HTTPError
-import json
 from json.decoder import JSONDecodeError
 import logging
 import requests
@@ -17,7 +16,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def check_status_code(status_code, response=None, url=None, headers=None, fp=None):
+def check_status_code(status_code, response, url, headers):
     """
     Utility function for checking the result of a Teamup API response. requires status code, pass the response to get
     the server message as a TeamUpError rather than HTTPError. Otherwise returns the message.
@@ -39,16 +38,16 @@ def check_status_code(status_code, response=None, url=None, headers=None, fp=Non
     if status_code >= 400:
         if isinstance(response, requests.Response):
             try:
-                response = json.loads(response.text)
+                response = response.json()
             except JSONDecodeError as e:
-                logger.error('Cannot decode response')
+                logger.error(f'Cannot decode response, response object should by type dict or requests.Response {type(response)}')
                 logger.exception(e)
                 response = None
-        if response and 'error' in response.keys():
+        if response and isinstance(response, dict) and 'error' in response.keys():
             error_msg = response['error']['message']
             error_title = response['error']['title']
-            raise TeamUpError(f'Response {status_code} - {error_title}: {error_msg}')
-        raise HTTPError(url, status_code, RESPONSES.get(status_code, 'Unknown Error'), hdrs=headers, fp=fp)
+            raise TeamUpError(url, status_code, f'Response {status_code} - {error_title}: {error_msg}', hdrs=headers, fp=None)
+        raise HTTPError(url, status_code, f'Non-Teamup Error. Response: {str(response)}', hdrs=headers, fp=None)
     return RESPONSES.get(status_code, f'Unknown but Ok: {status_code}')
 
 
@@ -101,7 +100,7 @@ def make_request(method, url, headers=None, payload=None):
         raise ValueError(f'Unknown Method type {method}')
 
     try:
-        check_status_code(resp.status_code, resp)
+        check_status_code(resp.status_code, resp, url=url, headers=headers)
     except TeamUpError as e:
         if payload:
             logger.error(f'Payload sent with request:\n{payload}')
