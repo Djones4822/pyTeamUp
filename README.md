@@ -25,12 +25,15 @@ python -m pip install pyTeamUp
  * If pandas is present, Calendar can return events as Series objects and event collections as DataFrame objects
 
 ## Example usage 
+To use the API you must have a Calendar Key **and** an API Key. The API Key is tied to your logged in user, the calendar key is connected to an individual calendar. 
+
+To find your Calendar Key, open your calendar in the web, go to Settings, and go to Sharing. Select "Create Link" and assign the necessary permissions to the key. Note that in order for the ability to create, modify, and delete access keys via the API, the calendar key must have Admin permissision. Older calendars already had Admin keys created, but new calendars must have an admin key created for API usage. Calendars come default with a read-only and a modify key upon creation. 
 ```python
 from pyteamup import Calendar, Event, Key
 from datetime import datetime
 
-api_key = 'example api key'           # Get your own here: https://teamup.com/api-keys/request
-calendar_id = 'example calendar id'   # goto www.teamup.com to sign up and get your own calendar
+api_key = '8ug9fdhgjp2893ntkjfnv892noyt3qyon'  # example API key
+calendar_id = '7za78fdsnbfmd'                  # example Calendar Key
 
 # Instantiate the calendar
 calendar = Calendar(calendar_id, api_key)
@@ -75,7 +78,7 @@ evnt.event_id = 123                  # Will raise an error because attribute is 
 evnt.delete()
 print(evnt.is_deleted)               # Will return True
 
-# Gather keys already created for a Calendar
+# Gather keys already created for a Calendar, remember your Calendar Key must have Admin permissions for this functionality
 keys = calendar.get_key_collection(returnas='key')
 # or
 keys = calendar.keys                 # easy property accessor, identical output to get_key_collection
@@ -84,10 +87,6 @@ key = calendar.get_key(123456)       # access an individual key by passing it th
 
 # Inspect Key information
 print(key.as_dict)                
-
-# Delete keys
-calendar.delete_key(key)            # can pass a Key object, or the integer ID representing a Key (not the `key` value itself)
-print(calendar.keys)                # Will return the tuple of keys excluding what was just deleted
 
 # Create new Access Key with singular role of "read_only" 
 jt_key = calendar.create_key(key_name='Johnny Test', key_share_type='all_subcalendars', key_perms='read_only') 
@@ -137,7 +136,6 @@ calendar.delete_key(jt_key.id)
 ```
 
 ## todo
- * Further refactor error handling to output the full error message provided by TeamUp 
  * Add support for updating recurring events
  * Build Subcalendar object with update support similar to Event object
  * Add Tests
