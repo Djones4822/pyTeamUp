@@ -1,12 +1,12 @@
 # pyTeamUp
 Python API wrapper for TeamUp API. 
 
-**Latest Version**: 0.1.5a-ALPHA (available in `accesskeys` build)  
+**Latest Version**: 0.1.6a (available in `requests-refactor` build)
 **Latest Stable Version**: 0.1.4a (available via pip)
 
 **Note**: version 0.1.4a or higher is required for working with the TeamUp API as of 11/26/2021. This version adds basic support for `atttachment` event attribute, but  since it is undocumented in the official API there is no way to add or remove attachments. They can be viewed using `event.attachments` if set through the Web interface.
 
-**Note2**: 0.1.5a-ALPHA includes experimental `Key` object, as well as certain changes that may break existing code. Specifically, all `Exception`s are now raised as more informative `TypeError` or `ValueError` or `HTTPError`. A mostly complete list of changes and additions is available in the version history below.
+**Note2**: 0.1.5a and higher includes experimental `Key` object, as well as certain changes that may break existing code. Specifically, all `Exception`s are now raised as more informative `TypeError` or `ValueError` or `HTTPError`. A mostly complete list of changes and additions is available in the version history below.
 
 ## Installation
 python 3.6 or higher required. Use pip (Current Version: 0.1.4a):
@@ -158,7 +158,14 @@ Use issue tracker please :)
 none
 
 ## Change Log  
-**0.1.5a-ALPHA**  
+**0.1.6a**
+* Refactor error handling - added the TeamUpError that raises when a request is rejected by the TeamUp server. This error is a child of the urllib.errors.HTTPError and has all associated values for handling
+* Bugfixes and minor improvements throughout
+
+**0.1.5b**
+* Minor bugfixes
+
+**0.1.5a**
 Special Thanks to Frederick Schaller IV (@LogicallyUnfit on Github) for providing basis that this update was built off. Much of his code was re-used or refactored into this version release.
 
 *Calendar Object*
