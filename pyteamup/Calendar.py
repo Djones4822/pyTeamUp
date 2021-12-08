@@ -9,6 +9,7 @@ Contributor(s): Frederick Schaller IV (@LogicallyUnfit on Github)
 """
 from warnings import warn
 import logging
+import json
 import sys
 from dateutil.parser import parse as to_datetime
 try:
@@ -110,7 +111,7 @@ class Calendar:
             print('Fetching configuration')
             url = self._base_url + CONFIGURATION_BASE
             req = make_request('get', url, self.__headers)
-            self.__configuration = json.loads(req.text)['configuration']
+            self.__configuration = req.json()['configuration']
         return self.__configuration
 
     @property
@@ -118,7 +119,7 @@ class Calendar:
         if not self.__subcalendars:
             print('Fetching Subcalendars')
             req = make_request('get', self._subcalendars_url, self.__headers)
-            self.__subcalendars = json.loads(req.text)['subcalendars']
+            self.__subcalendars = req.json()['subcalendars']
         return self.__subcalendars
 
     def clear_calendar_cache(self):
@@ -159,7 +160,7 @@ class Calendar:
         parameters = f'&startDate={start_dt.strftime("%Y-%m-%d")}&endDate={end_dt.strftime("%Y-%m-%d")}' + subcal_par + para_markdown
         url = f'{self._event_collection_url}?{parameters}'
         req = make_request('get', url, self.__headers)
-        self.events_json = json.loads(req.text)['events']
+        self.events_json = req.json()['events']
 
         if returnas == 'events':
             return [Event(self, **event_dict) for event_dict in self.events_json]
@@ -314,7 +315,7 @@ class Calendar:
         resp = make_request('get', self._accesskey_url, headers=self.__headers)
         keys = resp.json()['keys']
         if returnas == 'key':
-            return (Key(parent=self, **key) for key in keys)
+            return tuple(Key(parent=self, **key) for key in keys)
         return tuple(keys)
 
     def get_key(self, key_id, returnas='key'):

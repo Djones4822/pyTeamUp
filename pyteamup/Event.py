@@ -10,6 +10,7 @@ from datetime import datetime
 from collections import OrderedDict
 from dateutil.parser import parse as to_datetime
 import logging
+import json
 
 from pyteamup.utils.func import *
 from pyteamup.utils.const import *
@@ -332,7 +333,6 @@ class Event:
     def as_dict(self):
         dict1 = self._base_update_dict
         dict2 = {
-            'notes': self.__notes,
             'rrule': self.__rrule,
             'ristart_dt': self.__ristart_dt,
             'rsstart_dt': self.__rsstart_dt,

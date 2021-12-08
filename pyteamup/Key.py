@@ -18,6 +18,7 @@ of acceptibility is deferred to the teamup servers, relying on the server respon
 
 I believe the server behavior structures it's logic by first looking at the share_type value. If share_type is '
 """
+import json
 from pyteamup.utils.func import *
 from pyteamup.utils.const import *
 #from pyteamup.Calendar import Calendar
